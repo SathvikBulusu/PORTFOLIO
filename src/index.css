@@ -1,0 +1,5 @@
+/* Global resets handled inside App.jsx CSS string */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
