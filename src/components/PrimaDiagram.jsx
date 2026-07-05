@@ -1,230 +1,189 @@
-/* PrimaDiagram.jsx — PRIMA Real Architecture
-   4 stages: Input → Coding → Analysis → Insights
-   Redesigned for legibility — larger type, purple stage accents, proper hierarchy.
+/* PrimaDiagram.jsx — PRIMA Architecture (v4)
+   viewBox 1000px wide — Stage 3/4 boxes get proper room.
+   Labels only on key transitions. Zero overlapping text.
 */
-
 export default function PrimaDiagram() {
   const S      = "#0A0A0B";
   const PURPLE = "#9333EA";
   const ARRAY  = "'Array', monospace";
   const MONO   = "'Space Mono', monospace";
-  const BOX_H  = 70;
+  const BH     = 70;
 
-  /* Corner bracket */
-  const Bracket = ({ x, y, flipX = false, flipY = false }) => {
-    const dx = flipX ? -1 : 1;
-    const dy = flipY ? -1 : 1;
-    return (
-      <path
-        d={`M${x} ${y + 9 * dy} L${x} ${y} L${x + 9 * dx} ${y}`}
-        stroke={S} strokeWidth="1.2" fill="none" opacity="0.4"
-      />
-    );
+  const Bkt = ({ x, y, fx = false, fy = false }) => {
+    const dx = fx ? -1 : 1, dy = fy ? -1 : 1;
+    return <path d={`M${x} ${y+10*dy} L${x} ${y} L${x+10*dx} ${y}`}
+      stroke={S} strokeWidth="1.3" fill="none" opacity="0.35" />;
   };
 
-  /* Standard box */
-  const Box = ({ x, y, w, h = BOX_H, label, sub, hub = false }) => {
+  const Box = ({ x, y, w, h = BH, label, sub, hub = false }) => {
     const cy = y + h / 2;
     return (
       <g>
-        <rect
-          x={x} y={y} width={w} height={h}
-          fill={hub ? "rgba(147,51,234,0.05)" : "none"}
+        <rect x={x} y={y} width={w} height={h}
+          fill={hub ? "rgba(147,51,234,0.06)" : "none"}
           stroke={hub ? PURPLE : S}
-          strokeWidth={hub ? "1.5" : "1.1"}
-          opacity="0.92"
-        />
-        <Bracket x={x}     y={y}     />
-        <Bracket x={x + w} y={y}     flipX />
-        <Bracket x={x}     y={y + h} flipY />
-        <Bracket x={x + w} y={y + h} flipX flipY />
-        <text
-          x={x + w / 2} y={sub ? cy - 6 : cy + 5}
-          textAnchor="middle"
-          fontFamily={ARRAY} fontSize="12" letterSpacing="0.9"
-          fill={hub ? PURPLE : S}
-        >
-          {label}
-        </text>
-        {sub && (
-          <text
-            x={x + w / 2} y={cy + 13}
-            textAnchor="middle"
-            fontFamily={MONO} fontSize="8.5"
-            fill={hub ? "#9333EA99" : "#666"}
-          >
-            {sub}
-          </text>
-        )}
+          strokeWidth={hub ? "1.6" : "1.1"} opacity="0.9" />
+        <Bkt x={x}   y={y}     /> <Bkt x={x+w} y={y}   fx />
+        <Bkt x={x}   y={y+h} fy /> <Bkt x={x+w} y={y+h} fx fy />
+        <text x={x+w/2} y={sub ? cy-7 : cy+5}
+          textAnchor="middle" fontFamily={ARRAY}
+          fontSize="12.5" letterSpacing="0.9"
+          fill={hub ? PURPLE : S}>{label}</text>
+        {sub && <text x={x+w/2} y={cy+14}
+          textAnchor="middle" fontFamily={MONO}
+          fontSize="9" fill={hub ? "#9333EAaa" : "#666"}>{sub}</text>}
       </g>
     );
   };
 
-  /* Arrow — straight or curved via custom `d` path */
-  const Arrow = ({ x1, y1, x2, y2, d }) => {
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.sqrt(dx * dx + dy * dy) || 1;
-    const ux = dx / len, uy = dy / len;
-    const px = -uy,  py = ux;
+  /* Strict orthogonal arrow. ax/ay = direction of arrowhead. */
+  const Arr = ({ d, x2, y2, ax = 0, ay = 1 }) => {
+    const len = Math.sqrt(ax*ax + ay*ay) || 1;
+    const ux = ax/len, uy = ay/len, px = -uy, py = ux;
     const tip = `${x2},${y2}`;
-    const bl  = `${x2 - ux * 7 + px * 4},${y2 - uy * 7 + py * 4}`;
-    const br  = `${x2 - ux * 7 - px * 4},${y2 - uy * 7 - py * 4}`;
+    const bl  = `${x2-ux*8+px*4.5},${y2-uy*8+py*4.5}`;
+    const br  = `${x2-ux*8-px*4.5},${y2-uy*8-py*4.5}`;
     return (
-      <g opacity="0.5">
-        {d
-          ? <path d={d} stroke={S} strokeWidth="1.4" fill="none" />
-          : <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={S} strokeWidth="1.4" />
-        }
+      <g opacity="0.55">
+        <path d={d} stroke={S} strokeWidth="1.5" fill="none" />
         <polygon points={`${tip} ${bl} ${br}`} fill={S} />
       </g>
     );
   };
 
-  /* Stage label — purple accent bar + bold Array text */
-  const Stage = ({ text, x, y }) => (
+  /* Label with white pill — placed carefully to never sit over box text */
+  const AL = ({ x, y, text }) => {
+    const tw = text.length * 5.5;
+    return (
+      <g>
+        <rect x={x-tw/2-4} y={y-11} width={tw+8} height={13}
+          fill="#F9F9F7" opacity="0.97" rx="2" />
+        <text x={x} y={y} textAnchor="middle"
+          fontFamily={MONO} fontSize="8" fill="#555" letterSpacing="0.2">{text}</text>
+      </g>
+    );
+  };
+
+  const Stage = ({ text, x = 30, y }) => (
     <g>
-      {/* vertical accent bar */}
-      <rect x={x} y={y - 14} width="3" height="19" fill={PURPLE} opacity="0.85" />
-      {/* label text */}
-      <text
-        x={x + 12} y={y}
-        fontFamily={ARRAY} fontSize="12" letterSpacing="2.5"
-        fill="#1a1a1a"
-      >
-        {text}
-      </text>
-      {/* subtle horizontal rule extending from the label */}
-      <line
-        x1={x + 12} y1={y + 6}
-        x2={x + 12 + 60} y2={y + 6}
-        stroke={PURPLE} strokeWidth="1" opacity="0.3"
-      />
+      <rect x={x} y={y-16} width="3.5" height="21" fill={PURPLE} opacity="0.85" />
+      <text x={x+14} y={y} fontFamily={ARRAY} fontSize="13"
+        letterSpacing="2.8" fill="#111">{text}</text>
     </g>
   );
 
-  /* Postgres — ellipse hub with bracket corners */
-  const Postgres = ({ cx, cy, rx, ry }) => (
+  const DB = ({ cx, cy, rx, ry }) => (
     <g>
       <ellipse cx={cx} cy={cy} rx={rx} ry={ry}
-        fill="rgba(147,51,234,0.05)" stroke={PURPLE} strokeWidth="1.4" opacity="0.85" />
-      <Bracket x={cx - rx} y={cy - ry} />
-      <Bracket x={cx + rx} y={cy - ry} flipX />
-      <Bracket x={cx - rx} y={cy + ry} flipY />
-      <Bracket x={cx + rx} y={cy + ry} flipX flipY />
-      <text x={cx} y={cy - 5} textAnchor="middle"
-        fontFamily={ARRAY} fontSize="12" letterSpacing="1.5" fill={PURPLE}>
-        DATABASE
-      </text>
-      <text x={cx} y={cy + 13} textAnchor="middle"
-        fontFamily={MONO} fontSize="8.5" fill="#9333EA99">
-        Postgres
-      </text>
+        fill="rgba(147,51,234,0.06)" stroke={PURPLE} strokeWidth="1.6" opacity="0.9" />
+      <Bkt x={cx-rx} y={cy-ry}    /> <Bkt x={cx+rx} y={cy-ry}    fx />
+      <Bkt x={cx-rx} y={cy+ry} fy /> <Bkt x={cx+rx} y={cy+ry} fx fy />
+      <text x={cx} y={cy-5} textAnchor="middle"
+        fontFamily={ARRAY} fontSize="13" letterSpacing="1.8" fill={PURPLE}>DATABASE</text>
+      <text x={cx} y={cy+14} textAnchor="middle"
+        fontFamily={MONO} fontSize="9" fill="#9333EAaa">Postgres</text>
     </g>
   );
 
   return (
-    <svg viewBox="0 0 820 695" width="100%" style={{ display: "block" }}>
+    <svg viewBox="0 0 1000 820" width="100%" style={{ display:"block" }}>
 
-      {/* ══════════════════════════════════════════
-          STAGE 01 · INPUT
-      ══════════════════════════════════════════ */}
-      <Stage text="STAGE 01 · INPUT" x={30} y={28} />
+      {/* ══ STAGE 01 · INPUT ══ */}
+      <Stage text="STAGE 01 · INPUT" y={28} />
+      <Box x={30}  y={40} w={110} label="LOGIN"          sub="Auth"              />
+      <Box x={165} y={40} w={185} label="PRODUCT SETUP"  sub="Research Storage"  />
+      <Box x={375} y={40} w={195} label="MODEL SELECTOR" sub="Thinking Levels"   />
+      <Box x={595} y={40} w={220} label="DATA UPLOAD"    sub="CSV · XLSX · Drive" />
 
-      <Box x={30}  y={40} w={82}  label="LOGIN"          sub="Auth"              />
-      <Box x={128} y={40} w={158} label="PRODUCT SETUP"  sub="Research Storage"  />
-      <Box x={302} y={40} w={158} label="MODEL SELECTOR" sub="Thinking Levels"   />
-      <Box x={476} y={40} w={185} label="DATA UPLOAD"    sub="CSV · XLSX · Drive" />
+      <Arr d="M 140 75 L 165 75"  x2={165} y2={75} ax={1} ay={0} />
+      <Arr d="M 350 75 L 375 75"  x2={375} y2={75} ax={1} ay={0} />
+      <Arr d="M 570 75 L 595 75"  x2={595} y2={75} ax={1} ay={0} />
 
-      <Arrow x1={110} y1={75} x2={128} y2={75} />
-      <Arrow x1={284} y1={75} x2={302} y2={75} />
-      <Arrow x1={458} y1={75} x2={476} y2={75} />
+      {/* ══ STAGE 02 · CODING ══ */}
+      <Stage text="STAGE 02 · CODING" y={132} />
 
-      {/* ══════════════════════════════════════════
-          STAGE 02 · CODING
-      ══════════════════════════════════════════ */}
-      <Stage text="STAGE 02 · CODING" x={30} y={128} />
+      {/* DATA UPLOAD cx=705, bottom=110 → SINGLE & DOUBLE */}
+      <Arr d="M 705 110 L 705 128 L 570 128 L 570 148" x2={570} y2={148} ax={0} ay={1} />
+      <AL x={636} y={122} text="single sheet" />
 
-      {/* DATA UPLOAD center (x=568, y=110) → Single / Double */}
-      <Arrow x1={568} y1={110} x2={502} y2={145} />
-      <Arrow x1={568} y1={110} x2={628} y2={145} />
+      <Arr d="M 705 110 L 705 128 L 740 128 L 740 148" x2={740} y2={148} ax={0} ay={1} />
+      <AL x={722} y={122} text="double sheet" />
 
-      <Box x={436} y={145} w={128} label="SINGLE SHEET" />
-      <Box x={568} y={145} w={128} label="DOUBLE SHEET" />
+      <Box x={505} y={148} w={130} label="SINGLE SHEET" />
+      <Box x={675} y={148} w={130} label="DOUBLE SHEET" />
+      <Box x={840} y={148} w={130} label="Q SELECTOR"   sub="Double Sheet Only" />
 
-      {/* Double right edge → Q Selector */}
-      <Arrow x1={696} y1={180} x2={710} y2={220} />
-      <Box   x={700} y={220} w={114} label="Q SELECTOR" sub="Double Sheet Only" />
+      {/* DOUBLE right (805) → Q SELECTOR left (840): horizontal */}
+      <Arr d="M 805 183 L 840 183" x2={840} y2={183} ax={1} ay={0} />
+      <AL x={822} y={177} text="double only" />
 
-      {/* Single bottom → Coding Space */}
-      <Arrow x1={500} y1={215} x2={462} y2={252} />
+      {/* SINGLE → CODING SPACE (elbow at y=240) */}
+      <Arr d="M 570 218 L 570 240 L 538 240 L 538 265" x2={538} y2={265} ax={0} ay={1} />
+      <AL x={553} y={235} text="questions selected" />
 
-      {/* Q Selector → Coding Space (curved sweep left) */}
-      <Arrow
-        x1={700} y1={255} x2={548} y2={264}
-        d="M 700 255 Q 626 248 548 264"
-      />
+      {/* Q SELECTOR → CODING SPACE (sweep left along y=240) */}
+      <Arr d="M 905 218 L 905 240 L 670 240 L 670 265" x2={670} y2={265} ax={0} ay={1} />
+      <AL x={787} y={235} text="question context" />
 
-      <Box x={366} y={252} w={180} label="CODING SPACE"   sub="Few-shot Examples"   />
-      <Box x={152} y={252} w={178} label="CODE TEMPLATES" sub="Version Control · DB" />
+      <Box x={388} y={265} w={292} label="CODING SPACE" sub="Few-shot Examples" />
 
-      {/* Coding Space → Code Templates */}
-      <Arrow x1={366} y1={287} x2={330} y2={287} />
+      {/* CODING SPACE → CODE TEMPLATES (exit left, down) */}
+      <Arr d="M 388 300 L 200 300 L 200 388" x2={200} y2={388} ax={0} ay={1} />
+      <AL x={294} y={294} text="saves template" />
 
-      {/* Coding Space → Coded Results */}
-      <Arrow x1={428} y1={322} x2={326} y2={352} />
+      {/* CODING SPACE → CODED RESULTS (straight down) */}
+      <Arr d="M 534 335 L 534 388" x2={534} y2={388} ax={0} ay={1} />
+      <AL x={550} y={361} text="batch output" />
 
-      <Box x={86} y={352} w={224} label="CODED RESULTS" sub="LLM Confidence · Recode" />
+      <Box x={100} y={388} w={200} label="CODE TEMPLATES" sub="Version Control · DB" />
+      <Box x={424} y={388} w={220} label="CODED RESULTS"  sub="LLM Confidence · Recode" />
 
-      {/* ── Postgres Hub ── */}
-      <Postgres cx={594} cy={392} rx={65} ry={45} />
+      {/* ── Postgres Hub cx=390, cy=515 ── */}
+      <DB cx={390} cy={515} rx={88} ry={50} />
 
-      {/* Code Templates → Postgres */}
-      <Arrow x1={330} y1={302} x2={533} y2={368} />
+      {/* CODE TEMPLATES (cx=200, bottom=458) → DB left (302, 515) */}
+      <Arr d="M 200 458 L 200 515 L 302 515" x2={302} y2={515} ax={1} ay={0} />
+      <AL x={250} y={508} text="version control" />
 
-      {/* Coded Results → Postgres (curved arc) */}
-      <Arrow
-        x1={310} y1={380} x2={531} y2={392}
-        d="M 310 380 Q 424 420 531 392"
-      />
+      {/* CODED RESULTS (cx=534, bottom=458) → DB right (478, 515) */}
+      <Arr d="M 534 458 L 534 515 L 478 515" x2={478} y2={515} ax={-1} ay={0} />
+      <AL x={507} y={508} text="stores coded data" />
 
-      {/* ══════════════════════════════════════════
-          STAGE 03 · ANALYSIS
-      ══════════════════════════════════════════ */}
-      <Stage text="STAGE 03 · ANALYSIS" x={30} y={468} />
+      {/* ══ STAGE 03 · ANALYSIS ══
+          4 boxes × 215px, 24px gaps, x=30 to x=962
+      ══ */}
+      <Stage text="STAGE 03 · ANALYSIS" y={600} />
 
-      {/* Postgres → Categorize (long curved arc) */}
-      <Arrow
-        x1={534} y1={408} x2={160} y2={480}
-        d="M 534 408 Q 354 444 160 480"
-      />
+      {/* DB bottom (390, 565) → CATEGORIZE top (137, 618) */}
+      <Arr d="M 390 565 L 390 588 L 137 588 L 137 612"  x2={137} y2={612} ax={0} ay={1} />
+      <AL x={263} y={582} text="retrieves results" />
 
-      {/* Postgres → Excel Export zone (direct) */}
-      <Arrow x1={594} y1={437} x2={648} y2={480} />
+      <Box x={30}  y={612} w={215} label="CATEGORIZE"     sub="Coded → Categories"   />
+      <Box x={269} y={612} w={215} label="UNIQUE PROMPTS"  sub="Project + Q Context"  />
+      <Box x={508} y={612} w={215} label="BACKEND CODING"  sub="Codes · Not Raw Text" />
+      <Box x={747} y={612} w={215} label="EXCEL EXPORT"    sub="% Codes · Quantify"   />
 
-      <Box x={30}  y={480} w={158} label="CATEGORIZE"    sub="Coded → Categories"   />
-      <Box x={206} y={480} w={172} label="UNIQUE PROMPTS" sub="Project + Q Context"  />
-      <Box x={396} y={480} w={168} label="BACKEND CODING" sub="Codes · Not Raw Text" />
-      <Box x={582} y={480} w={178} label="EXCEL EXPORT"   sub="% Codes · Quantify"  />
+      {/* Stage 3 chain — 24px gaps, arrows at box center y=647 */}
+      <Arr d="M 245 647 L 269 647" x2={269} y2={647} ax={1} ay={0} />
+      <Arr d="M 484 647 L 508 647" x2={508} y2={647} ax={1} ay={0} />
+      <Arr d="M 723 647 L 747 647" x2={747} y2={647} ax={1} ay={0} />
 
-      <Arrow x1={188} y1={515} x2={206} y2={515} />
-      <Arrow x1={378} y1={515} x2={396} y2={515} />
-      <Arrow x1={564} y1={515} x2={582} y2={515} />
+      {/* ══ STAGE 04 · INSIGHTS ══
+          3 boxes × 215px, right-to-left flow
+      ══ */}
+      <Stage text="STAGE 04 · INSIGHTS" y={714} />
 
-      {/* ══════════════════════════════════════════
-          STAGE 04 · INSIGHTS
-      ══════════════════════════════════════════ */}
-      <Stage text="STAGE 04 · INSIGHTS" x={30} y={582} />
+      {/* EXCEL EXPORT → ANALYTICS (straight down, cx=854) */}
+      <Arr d="M 854 682 L 854 726" x2={854} y2={726} ax={0} ay={1} />
+      <AL x={868} y={704} text="quantified data" />
 
-      {/* Excel Export → Analytics */}
-      <Arrow x1={671} y1={550} x2={671} y2={594} />
+      <Box x={747} y={726} w={215} label="ANALYTICS"    sub="Research Visualisations" />
+      <Box x={508} y={726} w={215} label="COST TRACKER" sub="Token · Project · Time"  />
+      <Box x={269} y={726} w={215} label="DEMOGRAPHICS" sub="Cohort · User Mapping"   />
 
-      <Box x={582} y={594} w={178} label="ANALYTICS"    sub="Research Visualisations" />
-      <Box x={392} y={594} w={168} label="COST TRACKER" sub="Token · Project · Time"  />
-      <Box x={200} y={594} w={165} label="DEMOGRAPHICS" sub="Cohort · User Mapping"   />
-
-      {/* Stage 4: right → left flow */}
-      <Arrow x1={582} y1={629} x2={560} y2={629} />
-      <Arrow x1={392} y1={629} x2={365} y2={629} />
+      {/* Stage 4 chain — right to left, arrows at center y=761 */}
+      <Arr d="M 747 761 L 723 761" x2={723} y2={761} ax={-1} ay={0} />
+      <Arr d="M 508 761 L 484 761" x2={484} y2={761} ax={-1} ay={0} />
 
     </svg>
   );
