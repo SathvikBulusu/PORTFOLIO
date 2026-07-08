@@ -13,31 +13,26 @@ const MV_LOGO = mvLogo;
 ───────────────────────────────────────────────────────────── */
 
 const ORIGIN_STORY = {
-  heading: "My Moneyview Experience",
-  body: "When I joined the Consumer Insights team, my objective was clear: understand how researchers worked before introducing AI into their workflow. I spent time learning how qualitative research was conducted, how responses were manually coded, and where the biggest bottlenecks existed. It quickly became apparent that the team had little to no AI infrastructure in place, so before building solutions, I had to establish the technical foundation itself. From setting up access to LLM providers and cloud services to configuring the tools that would eventually power our AI workflows, this phase wasn't just about onboarding it was about creating the ecosystem that would enable everything we built afterward.",
+  heading: "The Experience",
+  body: " I joined Moneyview's Consumer Insights team to understand how primary & research actually worked before building AI Automations. Spent the first 2 Months in the process of learning how qualitative studies ran, where responses got manually coded, where time actually disappeared. Parallely Started Exploring Voice Agents Along this path and i realised there's no AI infrasturcture for the CI Team, So i started getting accesses to build the foundation first: LLM provider accesses(Gemini, Claude & Open Source Models ( Qwen 3.5 thinking , Nvidia Nemotron , llama3.1 etc)), cloud tooling(Bigquery,GCP).Got set up on Metabase, BigQuery, Cloud Anix, and Confluence. Then started building things that actually mattered.",
 };
 
-const TOOL_ACCESS = [
-  { tool: "Metabase",   role: "Dashboard builder for sharing analytics across teams. Creating tables and visualisations felt genuinely easy." },
-  { tool: "BigQuery",   role: "Primary tool for heavy SQL and a syntax checkpoint when queries broke in Metabase." },
-  { tool: "Cloud Anix", role: "Access control for production databases. Essential for pulling transcripts in AI calling analysis." },
-  { tool: "Confluence", role: "Documentation hub for every SOP and runbook. Kept research from disappearing into Google Drive." },
-];
+const AI_TAGS = ["Python", "Multi LLM Support", "Async Processing", "Next Js","Shadcn","Analaytics"];
 
-const AI_TAGS = ["Python", "Gemini", "Multi-Provider", "JSON Schema", "Prompt Engineering"];
+const PRIMA_ENTRY = {
+  name: "PRIMA",
+  problem: "A typical research study means 300–500 people answering 15–20 open-ended questions. Every response needs manual classification. Before PRIMA, that meant one of three things: a team hand-coding responses for days, a colleague's fragile one-column Google Sheets script, or pasting into ChatGPT with no structure, no batching, and no cost tracking.",
+  solution: "The strategy was to build a provider-agnostic research platform with structured outputs at the center — not a ChatGPT wrapper. Designed PRIMA around configurable few-shot prompts, enum-constrained JSON schema for consistent outputs, and server-side batch processing to eliminate the browser's 6-connection parallelism limit. Built as a proper product with project management, token cost tracking, and audit logs — something the team could hand off and run independently.",
+  techniques: ["Multi-provider inference (Gemini/Claude/Ollama)", "Enum-constrained JSON schema", "Few-shot classification", "Server-side parallel processing", "Prompt caching via systemInstruction"],
+  impact: [
+    "71× faster after moving processing server-side — the same dataset went from 9.5 hours to 8 minutes once the browser's 6-connection limit stopped throttling parallelism.",
+    "84% fewer reasoning tokens after tuning the model's thinking-level default, with zero accuracy loss on classification.",
+    "Used by 6 researchers daily — replaced a process that used to take 2–3 days with one that takes minutes.",
+  ],
+};
 
-const AI_ENTRIES = [
-  {
-    name: "PRIMA",
-    isFlagship: true,
-    problem: "A typical research study means 300–500 people answering 15–20 open-ended questions. Every response needs manual classification. Before PRIMA, that meant one of three things: a team hand-coding responses for days, a colleague's fragile one-column Google Sheets script, or pasting into ChatGPT with no structure, no batching, and no cost tracking.",
-    techniques: ["Multi-provider inference (Gemini/Claude/Ollama)", "Enum-constrained JSON schema", "Few-shot classification", "Server-side parallel processing", "Prompt caching via systemInstruction"],
-    impact: [
-      "71× faster after moving processing server-side — the same dataset went from 9.5 hours to 8 minutes once the browser's 6-connection limit stopped throttling parallelism.",
-      "84% fewer reasoning tokens after tuning the model's thinking-level default, with zero accuracy loss on classification.",
-    ],
-    why: "Building PRIMA changed how I think about AI engineering. Production systems succeed or fail on prompt design, structured outputs, and iteration — not on which model you picked. Used by 6 researchers daily, replacing a process that used to take 2–3 days with one that takes minutes.",
-  },
+/* Voice Agent sub-entries — Internal Tooling removed */
+const VOICE_AGENT_ENTRIES = [
   {
     name: "AI Voice Agents",
     problem: "The team needed a scalable way to collect qualitative feedback without manually calling every user.",
@@ -51,23 +46,12 @@ const AI_ENTRIES = [
     why: "This was a tool other people relied on every day. I wanted to fix what was actually broken, not just ship something new next to it.",
   },
   {
-    name: "Internal Tooling & Automation",
-    problem: "The same manual, repetitive data-prep work kept eating hours across different research projects, every week.",
-    solution: "Built a JSON formatter, a few-shot coding pipeline that scaled 5 labelled examples into 400+ AI-coded responses, and several automation scripts that removed recurring manual steps.",
-    why: "I noticed the same bottleneck showing up in every project. Instead of fixing it once per project, I built something reusable.",
+    name: "Cohort Splitter",
+    problem: "Every study started the same way — 25 minutes of manual cohort-building before any actual research could begin. Same segmentation logic, different data, rebuilt by hand each time.",
+    solution: "Automated the full pipeline. Define the parameters once, run it, cohorts ready in 20 seconds. Removed a recurring pre-study blocker from every researcher's workflow.",
+    why: "The bottleneck kept showing up across projects. A one-time build was the only answer that actually scaled.",
   },
 ];
-
-const PRIMA_ENTRY = AI_ENTRIES[0];
-
-const COHORT_SPLITTER = {
-  name: "Cohort Splitter",
-  problem: "Every study started the same way — 25 minutes of manual cohort-building before any actual research could begin. Same segmentation logic, different data, rebuilt by hand each time.",
-  solution: "Automated the full pipeline. Define the parameters once, run it, cohorts ready in 20 seconds. Removed a recurring pre-study blocker from every researcher's workflow.",
-  why: "The bottleneck kept showing up across projects. A one-time build was the only answer that actually scaled.",
-};
-
-const VOICE_AGENT_ENTRIES = [AI_ENTRIES[1], AI_ENTRIES[2], AI_ENTRIES[3], COHORT_SPLITTER];
 
 const ANALYTICS_TAGS = ["Streamlit", "Metabase", "BigQuery", "SQL"];
 
@@ -102,24 +86,21 @@ const RESEARCH_LINE =
   "Also led primary research across six other product areas — digital gold adoption, personal loan repeat behaviour, balance transfer drivers, credit accessibility, UPI activation, and partner ecosystem research — from survey design through stakeholder presentation.";
 
 /* ─────────────────────────────────────────────────────────────
-   SHARED STYLE TOKENS
+   STYLE TOKENS
 ───────────────────────────────────────────────────────────── */
 const ARRAY = "'Array', monospace";
 const NIPPO = "'Nippo', sans-serif";
 const MONO  = "'Space Mono', monospace";
 
-/* Section label above a block ("Problem", "Solution", etc.) */
 const SectionLabel = ({ text }) => (
   <div style={{
     fontFamily: MONO, fontSize: ".72rem", letterSpacing: ".16em",
-    textTransform: "uppercase", color: "#555", fontWeight: 700,
-    marginBottom: 8,
+    textTransform: "uppercase", color: "#555", fontWeight: 700, marginBottom: 8,
   }}>
     {text}
   </div>
 );
 
-/* H2 block inside detail panel */
 const H2Block = ({ text }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 36 }}>
     <div style={{ width: 3, minHeight: 34, background: "#9333EA", flexShrink: 0, borderRadius: 2 }} />
@@ -158,7 +139,6 @@ export default function Work() {
     return () => { document.body.style.overflow = ""; };
   }, [step]);
 
-  /* Wave transition */
   useGSAP(() => {
     if (step !== "transitioning") return;
     gsap.set(waveOverlayRef.current, { autoAlpha: 0 });
@@ -184,39 +164,35 @@ export default function Work() {
       .to(waveOverlayRef.current, { autoAlpha: 0, duration: 0.55, ease: "power2.inOut" });
   }, { dependencies: [step] });
 
-  /* Categories fade-in */
   useGSAP(() => {
     if (step === "categories" && catRef.current) {
-      gsap.fromTo(catRef.current.children,
+      gsap.fromTo(
+        Array.from(catRef.current.children).filter(c => !c.dataset.backdrop),
         { opacity: 0, y: 18 },
         { opacity: 1, y: 0, stagger: 0.1, duration: 0.5, ease: "power2.out" }
       );
     }
   }, { dependencies: [step] });
 
-  /* Detail fade-in */
   useGSAP(() => {
     if (step === "detail" && detailRef.current) {
-      gsap.fromTo(detailRef.current,
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
-      );
+      gsap.fromTo(detailRef.current, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" });
     }
   }, { dependencies: [step, category] });
 
-  /* ── Shared box hover style (applied inline via event handlers) ── */
-  const hoverOn  = e => { e.currentTarget.style.borderColor = "#F9F9F7"; e.currentTarget.style.background = "rgba(255,255,255,0.11)"; };
-  const hoverOff = e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)"; e.currentTarget.style.background = "rgba(255,255,255,0.07)"; };
+  const hoverOn  = e => { e.currentTarget.style.borderColor="#F9F9F7"; e.currentTarget.style.background="rgba(255,255,255,0.11)"; };
+  const hoverOff = e => { e.currentTarget.style.borderColor="rgba(255,255,255,0.16)"; e.currentTarget.style.background="rgba(255,255,255,0.07)"; };
 
   const glassBox = {
     border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12,
-    padding: "32px 34px", background: "rgba(255,255,255,0.07)",
+    padding: "32px 28px", background: "rgba(255,255,255,0.07)",
     backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
     boxShadow: "0 24px 60px rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.2)",
     transition: "border-color .2s, background .2s",
+    boxSizing: "border-box",
   };
 
-  /* ── Entry renderer for detail panel (used by both AI sub-entries and Analytics) ── */
+  /* Shared entry block for voice agents + analytics */
   const EntryBlock = ({ e, last = false }) => (
     <div style={{ marginBottom: last ? 0 : 44, paddingBottom: last ? 0 : 44, borderBottom: last ? "none" : "1px solid #ECEAE4" }}>
       <div style={{ fontFamily: ARRAY, fontSize: "1.5rem", letterSpacing: ".02em", textTransform: "uppercase", color: "#0A0A0B", fontWeight: 700, marginBottom: 18 }}>
@@ -237,9 +213,6 @@ export default function Work() {
     </div>
   );
 
-  /* ═══════════════════════════════════════════════════════
-     RENDER
-  ═══════════════════════════════════════════════════════ */
   return (
     <section id="work" style={{
       background: "#F9F9F7", padding: "140px 48px",
@@ -248,7 +221,18 @@ export default function Work() {
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
 
-      {/* ── Moneyview wordmark — only visible trigger ── */}
+      {/* Faint "Work Experience" bg text */}
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        transform: "translate(-50%,-50%)",
+        fontFamily: ARRAY, fontSize: "clamp(3rem,11vw,10rem)",
+        letterSpacing: ".05em", textTransform: "uppercase",
+        color: "rgba(10,10,11,0.05)", whiteSpace: "nowrap",
+        userSelect: "none", pointerEvents: "none",
+      }}>
+        Work Experience
+      </div>
+
       <button onClick={open} data-cursor="Enter" style={{
         all: "unset", cursor: "pointer", position: "relative", zIndex: 2,
         fontFamily: ARRAY, fontSize: "clamp(2.4rem,7vw,5.5rem)",
@@ -257,7 +241,7 @@ export default function Work() {
         Moneyview
       </button>
 
-      {/* ── Wave transition overlay ── */}
+      {/* Wave transition overlay */}
       <div ref={waveOverlayRef} style={{
         position: "fixed", inset: 0, zIndex: 920, background: "#111111",
         pointerEvents: step === "transitioning" ? "auto" : "none",
@@ -295,12 +279,11 @@ export default function Work() {
 
       {/* ══════════════════════════════════════════════════════
           CATEGORIES SCREEN
-          Layout: heading + body → 3 boxes (Tool Access, AI, Analytics)
       ══════════════════════════════════════════════════════ */}
       {step === "categories" && (
         <div ref={categoriesScrollRef} data-lenis-prevent style={{
           position: "fixed", inset: 0, zIndex: 910,
-          background: "rgba(15,61,42,0.97)", overflowY: "auto",
+          background: "#0F3D2A", overflowY: "auto",
         }}>
           <button onClick={close} data-cursor="Close" style={{
             position: "fixed", top: 36, right: 48,
@@ -310,13 +293,25 @@ export default function Work() {
             Close x
           </button>
 
+          {/* MONEYVIEW backdrop — fixed to viewport center, always centered */}
+          <div style={{
+            position: "fixed", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            fontFamily: ARRAY, fontSize: "clamp(4rem,16vw,13rem)",
+            letterSpacing: ".05em", textTransform: "uppercase",
+            color: "rgba(255,255,255,0.06)", whiteSpace: "nowrap",
+            pointerEvents: "none", userSelect: "none", zIndex: 1,
+          }}>
+            Moneyview
+          </div>
+
           <div style={{
             minHeight: "100%", display: "flex", flexDirection: "column",
-            alignItems: "center", padding: "120px 10vw 100px",
+            alignItems: "center", padding: "120px 8vw 100px",
+            position: "relative", zIndex: 2,
           }}>
-
             {/* Origin story */}
-            <div style={{ maxWidth: 640, width: "100%", marginBottom: 52 }}>
+            <div style={{ maxWidth: 640, width: "100%", marginBottom: 56 }}>
               <div style={{
                 fontFamily: ARRAY, fontSize: "clamp(1.6rem,3.5vw,2.4rem)",
                 letterSpacing: ".03em", textTransform: "uppercase",
@@ -326,98 +321,86 @@ export default function Work() {
               </div>
               <div style={{
                 fontFamily: NIPPO, fontWeight: 300, fontSize: "1rem",
-                color: "#c8d8cc", lineHeight: 1.8,
+                color: "#c8d8cc", lineHeight: 1.9,
               }}>
                 {ORIGIN_STORY.body}
               </div>
             </div>
 
-            {/* 3 boxes */}
-            <div ref={catRef} style={{ display: "grid", gap: 18, width: "min(640px,90vw)" }}>
+            {/* ── 2 centred clickable boxes ── */}
+            <div
+              ref={catRef}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 360px))",
+                gap: 20,
+                width: "100%",
+                justifyContent: "center",
+              }}
+            >
+              {[
+                {
+                  key: "ai",
+                  label: "Applied AI & Voice Agents",
+                  desc: "PRIMA · AI Voice Agents · Transcript Intelligence · Cohort Splitter",
+                  tags: AI_TAGS,
+                },
+                {
+                  key: "analytics",
+                  label: "Analytics",
+                  desc: "4 dashboards across Consumer Insights, Support, and Lending",
+                  tags: ANALYTICS_TAGS,
+                },
+              ].map(cat => (
+                <div
+                  key={cat.key}
+                  onClick={() => select(cat.key)}
+                  data-cursor="Open"
+                  style={{ ...glassBox, cursor: "pointer", flex: "unset" }}
+                  onMouseEnter={hoverOn}
+                  onMouseLeave={hoverOff}
+                >
+                  {/* Label */}
+                  <div style={{
+                    fontFamily: ARRAY, fontSize: "1.55rem", letterSpacing: ".03em",
+                    textTransform: "uppercase", color: "#F9F9F7",
+                    fontWeight: 700, marginBottom: 10, lineHeight: 1.2,
+                  }}>
+                    {cat.label}
+                  </div>
 
-              {/* ── Box 1: Tool Access (display only) ── */}
-              <div style={{ ...glassBox }}>
-                <div style={{
-                  fontFamily: ARRAY, fontSize: "1.5rem", letterSpacing: ".03em",
-                  textTransform: "uppercase", color: "#F9F9F7",
-                  fontWeight: 700, marginBottom: 24,
-                }}>
-                  Tool Access
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {TOOL_ACCESS.map(t => (
-                    <div key={t.tool} style={{
-                      padding: "14px 16px",
-                      background: "rgba(255,255,255,0.08)",
-                      borderRadius: 8,
-                      border: "1px solid rgba(255,255,255,0.1)",
-                    }}>
-                      <div style={{
-                        fontFamily: ARRAY, fontSize: ".95rem", letterSpacing: ".02em",
-                        textTransform: "uppercase", color: "#F9F9F7",
-                        fontWeight: 700, marginBottom: 6,
-                      }}>
-                        {t.tool}
-                      </div>
-                      <div style={{
-                        fontFamily: NIPPO, fontWeight: 300,
-                        fontSize: ".82rem", color: "#a8bcae", lineHeight: 1.55,
-                      }}>
-                        {t.role}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                  {/* Short description */}
+                  <div style={{
+                    fontFamily: NIPPO, fontWeight: 300, fontSize: ".88rem",
+                    color: "#a8c0b0", lineHeight: 1.6, marginBottom: 22,
+                  }}>
+                    {cat.desc}
+                  </div>
 
-              {/* ── Box 2: Applied AI & Voice Agents (clickable) ── */}
-              <div
-                onClick={() => select("ai")} data-cursor="Open"
-                style={{ ...glassBox, cursor: "pointer" }}
-                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
-              >
-                <div style={{
-                  fontFamily: ARRAY, fontSize: "1.7rem", letterSpacing: ".03em",
-                  textTransform: "uppercase", color: "#F9F9F7",
-                  fontWeight: 700, marginBottom: 18,
-                }}>
-                  Applied AI & Voice Agents
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {AI_TAGS.map(t => (
-                    <span key={t} style={{
-                      fontFamily: MONO, fontSize: ".62rem", letterSpacing: ".08em",
-                      textTransform: "uppercase", color: "#F9F9F7", fontWeight: 700,
-                      border: "1px solid rgba(255,255,255,0.25)", padding: "6px 14px", borderRadius: 6,
-                    }}>{t}</span>
-                  ))}
-                </div>
-              </div>
+                  {/* Divider */}
+                  <div style={{ height: 1, background: "rgba(255,255,255,0.12)", marginBottom: 18 }} />
 
-              {/* ── Box 3: Analytics (clickable) ── */}
-              <div
-                onClick={() => select("analytics")} data-cursor="Open"
-                style={{ ...glassBox, cursor: "pointer" }}
-                onMouseEnter={hoverOn} onMouseLeave={hoverOff}
-              >
-                <div style={{
-                  fontFamily: ARRAY, fontSize: "1.7rem", letterSpacing: ".03em",
-                  textTransform: "uppercase", color: "#F9F9F7",
-                  fontWeight: 700, marginBottom: 18,
-                }}>
-                  Analytics
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {ANALYTICS_TAGS.map(t => (
-                    <span key={t} style={{
-                      fontFamily: MONO, fontSize: ".62rem", letterSpacing: ".08em",
-                      textTransform: "uppercase", color: "#F9F9F7", fontWeight: 700,
-                      border: "1px solid rgba(255,255,255,0.25)", padding: "6px 14px", borderRadius: 6,
-                    }}>{t}</span>
-                  ))}
-                </div>
-              </div>
+                  {/* Tags */}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {cat.tags.map(t => (
+                      <span key={t} style={{
+                        fontFamily: MONO, fontSize: ".58rem", letterSpacing: ".08em",
+                        textTransform: "uppercase", color: "#F9F9F7", fontWeight: 700,
+                        border: "1px solid rgba(255,255,255,0.22)", padding: "5px 12px", borderRadius: 6,
+                      }}>{t}</span>
+                    ))}
+                  </div>
 
+                  {/* Click hint */}
+                  <div style={{
+                    marginTop: 24, fontFamily: MONO, fontSize: ".6rem",
+                    letterSpacing: ".14em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.35)",
+                  }}>
+                    View work →
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -450,17 +433,13 @@ export default function Work() {
           <div ref={detailRef} style={{ maxWidth: 760, margin: "0 auto" }}>
 
             {category === "ai" ? (
-              /* ════════════════════════════════════════════
-                 APPLIED AI & VOICE AGENTS
-              ════════════════════════════════════════════ */
+              /* ── Applied AI & Voice Agents ── */
               <>
-                {/* H1 */}
                 <div style={{
                   fontFamily: ARRAY, fontSize: "clamp(1.8rem,4vw,3rem)",
                   letterSpacing: ".03em", textTransform: "uppercase",
                   color: "#0A0A0B", fontWeight: 700,
-                  paddingBottom: 28, marginBottom: 52,
-                  borderBottom: "1px solid #ECEAE4",
+                  paddingBottom: 28, marginBottom: 52, borderBottom: "1px solid #ECEAE4",
                 }}>
                   Applied AI & Voice Agents
                 </div>
@@ -469,13 +448,23 @@ export default function Work() {
                 <div style={{ marginBottom: 64, paddingBottom: 64, borderBottom: "1px solid #ECEAE4" }}>
                   <H2Block text="PRIMA" />
 
-                  <div style={{ marginBottom: 18 }}>
+                  {/* 1. Problem */}
+                  <div style={{ marginBottom: 24 }}>
                     <SectionLabel text="Problem" />
                     <div style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: "1rem", color: "#444", lineHeight: 1.75 }}>
                       {PRIMA_ENTRY.problem}
                     </div>
                   </div>
 
+                  {/* 2. Solution — Strategy & Planning */}
+                  <div style={{ marginBottom: 24 }}>
+                    <SectionLabel text="Solution — Strategy & Planning" />
+                    <div style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: "1rem", color: "#444", lineHeight: 1.75 }}>
+                      {PRIMA_ENTRY.solution}
+                    </div>
+                  </div>
+
+                  {/* 3. Architecture */}
                   <div style={{ margin: "32px 0" }}>
                     <SectionLabel text="Architecture" />
                     <div style={{ border: "1px solid #ECEAE4", borderRadius: 8, padding: "24px 16px", overflowX: "auto" }}>
@@ -483,7 +472,8 @@ export default function Work() {
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: 24 }}>
+                  {/* Techniques — compact tags */}
+                  <div style={{ marginBottom: 32 }}>
                     <SectionLabel text="Technique" />
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                       {PRIMA_ENTRY.techniques.map(t => (
@@ -496,22 +486,18 @@ export default function Work() {
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: 18 }}>
-                    <SectionLabel text="Measured Impact" />
+                  {/* 4. Impact — overall, at the end */}
+                  <div>
+                    <SectionLabel text="Impact" />
                     {PRIMA_ENTRY.impact.map((line, idx) => (
-                      <div key={idx} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+                      <div key={idx} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                         <span style={{ color: "#9333EA", flexShrink: 0, fontWeight: 700 }}>—</span>
                         <span style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: "1rem", color: "#444", lineHeight: 1.7 }}>{line}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div>
-                    <SectionLabel text="Why I did this" />
-                    <div style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: ".95rem", color: "#777", lineHeight: 1.75, fontStyle: "italic" }}>
-                      {PRIMA_ENTRY.why}
-                    </div>
-                  </div>
+                  {/* No "Why I did this" for PRIMA */}
                 </div>
 
                 {/* ── H2: Voice Agents ── */}
@@ -524,22 +510,17 @@ export default function Work() {
               </>
 
             ) : (
-              /* ════════════════════════════════════════════
-                 ANALYTICS
-              ════════════════════════════════════════════ */
+              /* ── Analytics ── */
               <>
-                {/* H1 */}
                 <div style={{
                   fontFamily: ARRAY, fontSize: "clamp(1.8rem,4vw,3rem)",
                   letterSpacing: ".03em", textTransform: "uppercase",
                   color: "#0A0A0B", fontWeight: 700,
-                  paddingBottom: 28, marginBottom: 52,
-                  borderBottom: "1px solid #ECEAE4",
+                  paddingBottom: 28, marginBottom: 52, borderBottom: "1px solid #ECEAE4",
                 }}>
                   Analytics
                 </div>
 
-                {/* ── H2: Dashboards ── */}
                 <div style={{ marginBottom: 52 }}>
                   <H2Block text="Dashboards" />
                   {ANALYTICS_ENTRIES.map((e, i) => (
@@ -547,7 +528,6 @@ export default function Work() {
                   ))}
                 </div>
 
-                {/* Research line */}
                 <div style={{
                   borderTop: "1px solid #ECEAE4", paddingTop: 36,
                   fontFamily: NIPPO, fontWeight: 300,
