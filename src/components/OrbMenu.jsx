@@ -19,183 +19,137 @@ const SOCIALS = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   THE STRUCTURE — 5 flat diamonds in a horizontal row:
+   STRUCTURE — 5 real 3D gem-cut diamonds in a horizontal row:
+   [BIG]—[small]—[tiny + inner]—[small]—[BIG]
 
-   [BIG PINK]—[small BLUE]—[tiny GOLD + inner diamond]—[small BLUE]—[BIG PINK]
+   Each diamond is a true bipyramid (two 4-sided cones joined at a
+   belt) — genuine 3D volume with facets, not a flat extruded plane.
 
-   Each diamond TIPS around the horizontal (X) axis — like a card
-   hinged at its middle, flipping forward/back. That's what makes
-   it read as real 3D: a flat shape foreshortens as it tips
-   (thin edge-on at 90°, full width at 0°), unlike a flat screen-
-   plane spin which never changes apparent size.
-
-   Pink pair tips one direction, blue pair the opposite direction
-   (counter-phase). Gold center stays rotationally fixed.
-   Thin strut lines connect the row + diagonal braces from each
-   pink's outer tip down toward the blue diamonds, per the sketch.
+   PHYSICS — continuous one-direction rotation, never oscillating:
+   - Outer pair: locked together, same speed, same direction forever
+   - Inner pair: opposite direction from outer, but DIFFERENT speeds
+     from each other so they drift out of sync and never re-align
+   - Center: rotationally fixed; only its nested inner diamond spins
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── SIZE ── */
-const ORB_CANVAS = 170;
-const ORB_CAM_Z  = 4.6;
+const ORB_CANVAS = 175;
+const ORB_CAM_Z  = 5.4;
 
-/* ── DIAMOND DIMENSIONS ── */
-const PINK_H = 1.55;   /* pink diamond half-height (tall)   */
-const PINK_W = 0.30;   /* pink diamond half-width           */
-const BLUE_H = 0.62;   /* blue diamond half-height          */
-const BLUE_W = 0.24;   /* blue diamond half-width           */
-const GOLD_W = 0.15;   /* gold diamond half-width (horiz.)  */
-const GOLD_H = 0.09;   /* gold diamond half-height          */
+/* ── DIAMOND DIMENSIONS (bipyramid: radius = belt width, halfHeight = apex distance) ── */
+const PINK_R = 0.30;  const PINK_H = 1.05;
+const BLUE_R = 0.24;  const BLUE_H = 0.50;
+const GOLD_R = 0.13;  const GOLD_H = 0.16;
+const GOLD_INNER_R = 0.06; const GOLD_INNER_H = 0.07;
 
-/* ── POSITIONS along X axis (tips touching) ── */
-const X_PINK = PINK_H * 0.62;                 /* pink center offset  */
-const X_BLUE = X_PINK - PINK_H + BLUE_H * 0.5; /* blue center offset  */
-const X_GOLD = 0;                              /* gold stays centered */
+/* ── POSITIONS along X (generous gaps — real 3D volume needs room) ── */
+const X_PINK = 1.30;
+const X_BLUE = 0.62;
+const X_GOLD = 0;
 
-/* ── ROTATION ── */
-const TIP_SPEED = 0.55;   /* radians/sec tipping speed */
+/* ── CONTINUOUS ROTATION SPEEDS (rad/sec) — never bounces, always spins ── */
+const SPEED_PINK   = 0.65;    /* both outer diamonds — locked together   */
+const SPEED_BLUE_L = -0.50;   /* inner left  — opposite dir from pink    */
+const SPEED_BLUE_R = -0.78;   /* inner right — different speed than left,
+                                  so the two never realign in phase      */
 
-/* ── COLORS ── */
-const COL_PINK  = "#F2B6C4";
-const COL_BLUE  = "#2E63EB";
-const COL_GOLD  = "#D9A73E";
-const COL_INNER = "#1a1a2e";
+/* ── COLORS — matched to the reference orb palette ── */
+const COL_OUTER = "#E0B888";   /* warm peach/tan  */
+const COL_INNER = "#7FA0E8";   /* periwinkle blue */
+const COL_GOLD  = "#D4A855";   /* gold accent, center */
+const COL_GOLD_INNER = "#20203A";
 
-/* ── Diamond shape (kite, pointed top/bottom) ── */
-function makeDiamond(halfW, halfH) {
-  const s = new THREE.Shape();
-  s.moveTo(0,  halfH);
-  s.lineTo( halfW, 0);
-  s.lineTo(0, -halfH);
-  s.lineTo(-halfW, 0);
-  s.closePath();
-  return s;
+/* ─── Bipyramid builder — two 4-sided cones joined at a shared belt ───
+   This is a REAL 3D gem shape (like the diamond emoji), not a flat plane. */
+function useBipyramidGeos(radius, halfHeight) {
+  return useMemo(() => {
+    const top = new THREE.ConeGeometry(radius, halfHeight, 4);
+    top.translate(0, halfHeight / 2, 0);       /* apex at +H, belt at y=0 */
+
+    const bot = new THREE.ConeGeometry(radius, halfHeight, 4);
+    bot.rotateZ(Math.PI);                       /* flip apex to point down */
+    bot.translate(0, -halfHeight / 2, 0);        /* apex at -H, belt at y=0 */
+
+    return { top, bot };
+  }, [radius, halfHeight]);
 }
 
-const EXT = { depth: 0.045, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.010, bevelSegments: 2 };
-
-/* ── One tipping diamond group ── */
-function TippingDiamond({ x, halfW, halfH, color, phase, speed, active }) {
+/* ── One spinning diamond (continuous rotation, never stops/bounces) ── */
+function SpinDiamond({ x, radius, halfHeight, color, speed, active }) {
   const grpRef = useRef();
-  const geo = useMemo(() => {
-    const g = new THREE.ExtrudeGeometry(makeDiamond(halfW, halfH), EXT);
-    g.translate(0, 0, -EXT.depth / 2);
-    return g;
-  }, [halfW, halfH]);
-  const edge = useMemo(() => new THREE.EdgesGeometry(geo), [geo]);
+  const { top, bot } = useBipyramidGeos(radius, halfHeight);
+
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color), metalness: 0.55, roughness: 0.28, side: THREE.DoubleSide,
-  }), [color]);
-  const edgeMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: new THREE.Color(color).multiplyScalar(0.6), transparent: true, opacity: 0.6,
+    color: new THREE.Color(color),
+    metalness: 0.5, roughness: 0.22,
+    flatShading: true,           /* crisp facet edges, real gem look */
   }), [color]);
 
-  useFrame(({ clock }) => {
+  useFrame((_, delta) => {
     if (!grpRef.current) return;
-    const t = clock.getElapsedTime();
-    const boost = active ? 1.6 : 1;
-    grpRef.current.rotation.x = Math.sin(t * speed * boost + phase) * (Math.PI / 2.1);
+    const boost = active ? 1.7 : 1;
+    grpRef.current.rotation.x += delta * speed * boost;  /* continuous — never resets/bounces */
   });
 
   return (
     <group ref={grpRef} position={[x, 0, 0]}>
-      <mesh geometry={geo} material={mat} />
-      <lineSegments geometry={edge} material={edgeMat} />
+      <mesh geometry={top} material={mat} />
+      <mesh geometry={bot} material={mat} />
     </group>
   );
 }
 
-/* ── Center gold assembly — outer diamond (fixed) + inner diamond (subtle spin) ── */
+/* ── Center gem — fixed rotation, nested inner diamond spins slowly ── */
 function CenterGold({ active }) {
   const innerRef = useRef();
-  const outerGeo = useMemo(() => {
-    const g = new THREE.ExtrudeGeometry(makeDiamond(GOLD_W, GOLD_H), EXT);
-    g.translate(0, 0, -EXT.depth / 2);
-    return g;
-  }, []);
-  const innerGeo = useMemo(() => {
-    const g = new THREE.ExtrudeGeometry(makeDiamond(GOLD_W * 0.42, GOLD_H * 0.42), EXT);
-    g.translate(0, 0, -EXT.depth / 2);
-    return g;
-  }, []);
+  const outer = useBipyramidGeos(GOLD_R, GOLD_H);
+  const inner = useBipyramidGeos(GOLD_INNER_R, GOLD_INNER_H);
+
   const outerMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(COL_GOLD), metalness: 0.7, roughness: 0.18,
-    emissive: new THREE.Color(COL_GOLD), emissiveIntensity: 0.25, side: THREE.DoubleSide,
+    color: new THREE.Color(COL_GOLD), metalness: 0.65, roughness: 0.18,
+    emissive: new THREE.Color(COL_GOLD), emissiveIntensity: 0.22,
+    flatShading: true,
   }), []);
   const innerMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(COL_INNER), metalness: 0.4, roughness: 0.3, side: THREE.DoubleSide,
+    color: new THREE.Color(COL_GOLD_INNER), metalness: 0.4, roughness: 0.3,
+    flatShading: true,
   }), []);
 
   useFrame(({ clock }) => {
     if (!innerRef.current) return;
-    const t = clock.getElapsedTime();
-    innerRef.current.rotation.z = t * (active ? 1.4 : 0.5);
+    innerRef.current.rotation.y = clock.getElapsedTime() * (active ? 1.3 : 0.45);
   });
 
   return (
     <group position={[X_GOLD, 0, 0]}>
-      <mesh geometry={outerGeo} material={outerMat} />
-      <mesh ref={innerRef} geometry={innerGeo} material={innerMat} position={[0, 0, 0.03]} />
+      <mesh geometry={outer.top} material={outerMat} />
+      <mesh geometry={outer.bot} material={outerMat} />
+      <group ref={innerRef}>
+        <mesh geometry={inner.top} material={innerMat} />
+        <mesh geometry={inner.bot} material={innerMat} />
+      </group>
     </group>
   );
 }
 
-/* ── Strut lines: horizontal spine + diagonal braces from pink tips ── */
-function Struts() {
-  const lineMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: "#999999", transparent: true, opacity: 0.35,
-  }), []);
-
-  const points = useMemo(() => {
-    const spine = new Float32Array([
-      -X_PINK - PINK_H, 0, 0,
-       X_PINK + PINK_H, 0, 0,
-    ]);
-    /* Diagonal braces: from each pink's top tip down toward its neighboring blue */
-    const braceL = new Float32Array([
-      -X_PINK, PINK_H, 0,   -X_BLUE, BLUE_H * 0.3, 0,
-    ]);
-    const braceR = new Float32Array([
-       X_PINK, PINK_H, 0,    X_BLUE, BLUE_H * 0.3, 0,
-    ]);
-    return { spine, braceL, braceR };
-  }, []);
-
-  const makeGeo = arr => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
-    return g;
-  };
-
-  return (
-    <>
-      <lineSegments geometry={makeGeo(points.spine)}  material={lineMat} />
-      <lineSegments geometry={makeGeo(points.braceL)} material={lineMat} />
-      <lineSegments geometry={makeGeo(points.braceR)} material={lineMat} />
-    </>
-  );
-}
-
-/* ── Full scene ── */
+/* ── Scene ── */
 function OrbScene({ active }) {
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[3, 3, 4]}  intensity={5.5} color="#ffffff" />
-      <pointLight position={[-3, -1, 3]} intensity={3.0} color="#ffb6c9" />
-      <pointLight position={[0, 2, -2]} intensity={2.0} color="#60a5fa" />
+      <ambientLight intensity={0.55} />
+      <pointLight position={[3, 3, 4]}   intensity={5.5} color="#ffffff" />
+      <pointLight position={[-3, -1, 3]} intensity={3.2} color="#ffd9b3" />
+      <pointLight position={[0, 2, -2]}  intensity={2.2} color="#7FA0E8" />
 
-      <Struts />
+      {/* Outer pair — locked together, one continuous direction */}
+      <SpinDiamond x={-X_PINK} radius={PINK_R} halfHeight={PINK_H} color={COL_OUTER} speed={SPEED_PINK} active={active} />
+      <SpinDiamond x={ X_PINK} radius={PINK_R} halfHeight={PINK_H} color={COL_OUTER} speed={SPEED_PINK} active={active} />
 
-      {/* Far pink diamonds — tip together, same phase */}
-      <TippingDiamond x={-X_PINK} halfW={PINK_W} halfH={PINK_H} color={COL_PINK} phase={0}    speed={TIP_SPEED} active={active} />
-      <TippingDiamond x={ X_PINK} halfW={PINK_W} halfH={PINK_H} color={COL_PINK} phase={0}    speed={TIP_SPEED} active={active} />
+      {/* Inner pair — opposite direction, DIFFERENT speeds so they never align */}
+      <SpinDiamond x={-X_BLUE} radius={BLUE_R} halfHeight={BLUE_H} color={COL_INNER} speed={SPEED_BLUE_L} active={active} />
+      <SpinDiamond x={ X_BLUE} radius={BLUE_R} halfHeight={BLUE_H} color={COL_INNER} speed={SPEED_BLUE_R} active={active} />
 
-      {/* Blue diamonds — tip opposite phase (π offset = counter motion) */}
-      <TippingDiamond x={-X_BLUE} halfW={BLUE_W} halfH={BLUE_H} color={COL_BLUE} phase={Math.PI} speed={TIP_SPEED} active={active} />
-      <TippingDiamond x={ X_BLUE} halfW={BLUE_W} halfH={BLUE_H} color={COL_BLUE} phase={Math.PI} speed={TIP_SPEED} active={active} />
-
-      {/* Gold center — rotationally constant, inner diamond subtly spins */}
+      {/* Center — fixed, inner gem spins */}
       <CenterGold active={active} />
     </>
   );
@@ -204,7 +158,7 @@ function OrbScene({ active }) {
 function OrbCanvas({ active }) {
   return (
     <Canvas
-      camera={{ position: [0, 0, ORB_CAM_Z], fov: 40 }}
+      camera={{ position: [0, 0, ORB_CAM_Z], fov: 38 }}
       style={{ width: ORB_CANVAS, height: ORB_CANVAS, display: "block" }}
       gl={{ alpha: true, antialias: true }}
     >
@@ -214,7 +168,7 @@ function OrbCanvas({ active }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   OrbMenu — popup shell unchanged from previous builds
+   OrbMenu — popup shell unchanged
 ───────────────────────────────────────────────────────────── */
 export default function OrbMenu() {
   const [open, setOpen] = useState(false);
@@ -275,19 +229,19 @@ export default function OrbMenu() {
           background: "rgba(5,5,9,0.96)",
           backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
           borderRadius: 18,
-          border: "1px solid rgba(242,182,196,0.20)",
+          border: "1px solid rgba(224,184,136,0.20)",
           padding: "20px 24px 16px",
           minWidth: 172,
           opacity: 0, visibility: "hidden", pointerEvents: "none",
           transform: "translateY(10px) scale(0.95)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 48px rgba(242,182,196,0.10), inset 0 1px 0 rgba(255,255,255,0.04)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 48px rgba(224,184,136,0.10), inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", marginBottom: 16 }}>
           {NAV_ITEMS.map(({ label, href }) => (
             <a key={label} href={href} className="orb-nav" onClick={() => setOpen(false)}
               style={{ fontFamily:"'Array',monospace", fontSize:"1.05rem", letterSpacing:".04em", textTransform:"uppercase", color:"#F9F9F7", textDecoration:"none", padding:"5px 0", display:"block", transition:"color .16s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#2E63EB"}
+              onMouseEnter={e => e.currentTarget.style.color = "#7FA0E8"}
               onMouseLeave={e => e.currentTarget.style.color = "#F9F9F7"}
             >{label}</a>
           ))}
@@ -311,7 +265,7 @@ export default function OrbMenu() {
         style={{
           opacity: 0, cursor: "pointer",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-          filter: `drop-shadow(0 0 ${open ? 20 : 9}px rgba(242,182,196,${open ? 0.55 : 0.3}))`,
+          filter: `drop-shadow(0 0 ${open ? 20 : 9}px rgba(224,184,136,${open ? 0.55 : 0.3}))`,
           transition: "filter .4s ease",
         }}
       >
@@ -319,7 +273,7 @@ export default function OrbMenu() {
         <span style={{
           fontFamily: "'Space Mono',monospace", fontSize: ".46rem",
           letterSpacing: ".22em", textTransform: "uppercase",
-          color: open ? "#2E63EB" : "#555", transition: "color .3s",
+          color: open ? "#7FA0E8" : "#555", transition: "color .3s",
         }}>
           {open ? "close" : "menu"}
         </span>
