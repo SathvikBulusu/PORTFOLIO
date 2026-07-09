@@ -19,275 +19,205 @@ const SOCIALS = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
-   📐  SIZE — one number to rule them all
+   THE STRUCTURE — 5 flat diamonds in a horizontal row:
+
+   [BIG PINK]—[small BLUE]—[tiny GOLD + inner diamond]—[small BLUE]—[BIG PINK]
+
+   Each diamond TIPS around the horizontal (X) axis — like a card
+   hinged at its middle, flipping forward/back. That's what makes
+   it read as real 3D: a flat shape foreshortens as it tips
+   (thin edge-on at 90°, full width at 0°), unlike a flat screen-
+   plane spin which never changes apparent size.
+
+   Pink pair tips one direction, blue pair the opposite direction
+   (counter-phase). Gold center stays rotationally fixed.
+   Thin strut lines connect the row + diagonal braces from each
+   pink's outer tip down toward the blue diamonds, per the sketch.
 ═══════════════════════════════════════════════════════════════ */
-const ORB_CANVAS = 180;   /* px canvas — 100–200 range          */
-const ORB_CAM_Z  = 1.85;  /* camera Z — lower = fills canvas more */
 
-/* ═══════════════════════════════════════════════════════════════
-   ⚙️  SHAPE PARAMETERS
-   Leaf  = the 4 black elongated shapes at diagonals (45°/135°/225°/315°)
-   Diam  = the 4 blue diamond arms at cardinals  (0°/90°/180°/270°)
-═══════════════════════════════════════════════════════════════ */
-const LEAF_INNER = 0.08;    /* leaf inner tip from center  */
-const LEAF_OUTER = 1.10;    /* leaf outer tip from center  */
-const LEAF_WIDTH = 0.062;   /* leaf half-width at widest   */
+/* ── SIZE ── */
+const ORB_CANVAS = 170;
+const ORB_CAM_Z  = 4.6;
 
-const DIAM_INNER = 0.08;    /* diamond inner tip           */
-const DIAM_OUTER = 0.85;    /* diamond outer tip           */
-const DIAM_WIDTH = 0.27;    /* diamond half-width          */
-const DIAM_SHLD  = 0.44;    /* shoulder height ratio 0–1   */
+/* ── DIAMOND DIMENSIONS ── */
+const PINK_H = 1.55;   /* pink diamond half-height (tall)   */
+const PINK_W = 0.30;   /* pink diamond half-width           */
+const BLUE_H = 0.62;   /* blue diamond half-height          */
+const BLUE_W = 0.24;   /* blue diamond half-width           */
+const GOLD_W = 0.15;   /* gold diamond half-width (horiz.)  */
+const GOLD_H = 0.09;   /* gold diamond half-height          */
 
-/* ═══════════════════════════════════════════════════════════════
-   🔄  ROTATION SPEEDS (radians / second)
-   Black leaves = counter-clockwise  (negative Z)
-   Blue diamonds = clockwise         (positive Z)
-═══════════════════════════════════════════════════════════════ */
-const LEAF_SPEED = 0.45;
-const DIAM_SPEED = 0.70;
+/* ── POSITIONS along X axis (tips touching) ── */
+const X_PINK = PINK_H * 0.62;                 /* pink center offset  */
+const X_BLUE = X_PINK - PINK_H + BLUE_H * 0.5; /* blue center offset  */
+const X_GOLD = 0;                              /* gold stays centered */
 
-/* ─── Shared extrude options (tiny depth → bevel catches light) ─── */
-const EXT = {
-  depth: 0.020,
-  bevelEnabled: true,
-  bevelSize: 0.009,
-  bevelThickness: 0.007,
-  bevelSegments: 2,
-};
+/* ── ROTATION ── */
+const TIP_SPEED = 0.55;   /* radians/sec tipping speed */
 
-/* ─── Shape constructors ─── */
-function makeLeaf() {
-  /* Double bezier → symmetric lens shape, SHARP at both ends */
+/* ── COLORS ── */
+const COL_PINK  = "#F2B6C4";
+const COL_BLUE  = "#2E63EB";
+const COL_GOLD  = "#D9A73E";
+const COL_INNER = "#1a1a2e";
+
+/* ── Diamond shape (kite, pointed top/bottom) ── */
+function makeDiamond(halfW, halfH) {
   const s = new THREE.Shape();
-  const gap = LEAF_OUTER - LEAF_INNER;
-  s.moveTo(0, LEAF_INNER);
-  s.bezierCurveTo(
-     LEAF_WIDTH, LEAF_INNER + gap * 0.28,
-     LEAF_WIDTH, LEAF_INNER + gap * 0.68,
-     0,          LEAF_OUTER
-  );
-  s.bezierCurveTo(
-    -LEAF_WIDTH, LEAF_INNER + gap * 0.68,
-    -LEAF_WIDTH, LEAF_INNER + gap * 0.28,
-     0,          LEAF_INNER
-  );
+  s.moveTo(0,  halfH);
+  s.lineTo( halfW, 0);
+  s.lineTo(0, -halfH);
+  s.lineTo(-halfW, 0);
   s.closePath();
   return s;
 }
 
-function makeDiamond() {
-  /* Strict linear edges → SHARP crystal faces, no curves */
-  const s = new THREE.Shape();
-  const shldY = DIAM_INNER + (DIAM_OUTER - DIAM_INNER) * DIAM_SHLD;
-  s.moveTo(0,            DIAM_INNER);
-  s.lineTo( DIAM_WIDTH,  shldY);
-  s.lineTo(0,            DIAM_OUTER);
-  s.lineTo(-DIAM_WIDTH,  shldY);
-  s.closePath();
-  return s;
-}
+const EXT = { depth: 0.045, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.010, bevelSegments: 2 };
 
-/* ─── Center blob shaders ─── */
-const blobVert = /* glsl */`
-  uniform float uTime;
-  uniform float uAmp;
-  varying vec3 vNormal;
-  varying vec3 vPos;
+/* ── One tipping diamond group ── */
+function TippingDiamond({ x, halfW, halfH, color, phase, speed, active }) {
+  const grpRef = useRef();
+  const geo = useMemo(() => {
+    const g = new THREE.ExtrudeGeometry(makeDiamond(halfW, halfH), EXT);
+    g.translate(0, 0, -EXT.depth / 2);
+    return g;
+  }, [halfW, halfH]);
+  const edge = useMemo(() => new THREE.EdgesGeometry(geo), [geo]);
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(color), metalness: 0.55, roughness: 0.28, side: THREE.DoubleSide,
+  }), [color]);
+  const edgeMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: new THREE.Color(color).multiplyScalar(0.6), transparent: true, opacity: 0.6,
+  }), [color]);
 
-  float h(float n){ return fract(sin(n)*43758.5453); }
-  float noise(vec3 x){
-    vec3 p=floor(x), f=fract(x);
-    f=f*f*(3.-2.*f);
-    float n=p.x+p.y*57.+113.*p.z;
-    return mix(
-      mix(mix(h(n),h(n+1.),f.x),mix(h(n+57.),h(n+58.),f.x),f.y),
-      mix(mix(h(n+113.),h(n+114.),f.x),mix(h(n+170.),h(n+171.),f.x),f.y),
-    f.z);
-  }
-
-  void main(){
-    vNormal = normalize(normalMatrix * normal);
-    float n  = noise(position * 4.5 + vec3(uTime * 0.85));
-    vec3 d   = position + normal * n * uAmp;
-    vPos     = (modelMatrix * vec4(d, 1.0)).xyz;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(d, 1.0);
-  }
-`;
-
-const blobFrag = /* glsl */`
-  uniform vec3 uColor;
-  varying vec3 vNormal;
-  varying vec3 vPos;
-
-  void main(){
-    vec3 vd  = normalize(cameraPosition - vPos);
-    float fr = pow(1. - clamp(dot(normalize(vNormal), vd), 0., 1.), 2.6);
-    vec3 col = mix(uColor, vec3(1., .97, .85), fr * 0.72);
-    gl_FragColor = vec4(col, 0.88 + fr * 0.12);
-  }
-`;
-
-/* ─── Main 3D scene (runs inside R3F Canvas) ─── */
-function OrbScene({ isOpen, isHovered }) {
-  const leafGrpRef = useRef();   /* black leaves  — CCW */
-  const diamGrpRef = useRef();   /* blue diamonds — CW  */
-  const blobMatRef = useRef();   /* center blob shader  */
-
-  /* Black leaves — dark metallic */
-  const blackMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color:     new THREE.Color("#0a0a0a"),
-    metalness: 0.85,
-    roughness: 0.15,
-    side:      THREE.DoubleSide,
-  }), []);
-
-  /* Blue diamonds — vivid, bright enough to read over black */
-  const blueMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color:     new THREE.Color("#2563eb"),   /* bright blue — visible with just lights */
-    metalness: 0.80,
-    roughness: 0.10,
-    side:      THREE.DoubleSide,
-    emissive:  new THREE.Color("#0a1a4a"),   /* slight self-illumination so it's never pure black */
-    emissiveIntensity: 0.35,
-  }), []);
-
-  const leafWireMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: new THREE.Color("#1a1a1a"), transparent: true, opacity: 0.55,
-  }), []);
-
-  const diamWireMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: new THREE.Color("#4a80c0"), transparent: true, opacity: 0.40,
-  }), []);
-
-  /* Pre-built geometries */
-  const { leafGeos, leafWires, diamGeos, diamWires } = useMemo(() => {
-    const leafShape = makeLeaf();
-    const diamShape = makeDiamond();
-
-    /* 4 leaves — 45°, 135°, 225°, 315° */
-    const leafGeos = [0,1,2,3].map(i => {
-      const g = new THREE.ExtrudeGeometry(leafShape, EXT);
-      g.rotateZ(Math.PI / 4 + i * (Math.PI / 2));
-      g.translate(0, 0, -EXT.depth / 2);
-      return g;
-    });
-    const leafWires = leafGeos.map(g => new THREE.EdgesGeometry(g));
-
-    /* 4 diamond arms — 0°, 90°, 180°, 270° */
-    const diamGeos = [0,1,2,3].map(i => {
-      const g = new THREE.ExtrudeGeometry(diamShape, EXT);
-      g.rotateZ(i * (Math.PI / 2));
-      g.translate(0, 0, -EXT.depth / 2);
-      return g;
-    });
-    const diamWires = diamGeos.map(g => new THREE.EdgesGeometry(g));
-
-    return { leafGeos, leafWires, diamGeos, diamWires };
-  }, []);
-
-  const C = useRef({
-    blueA: new THREE.Color("#2563eb"),   /* vivid blue start  */
-    blueB: new THREE.Color("#D97706"),   /* amber gold end    */
-    wireA: new THREE.Color("#60a5fa"),
-    wireB: new THREE.Color("#D4A843"),
-    blobA: new THREE.Color("#3b82f6"),
-    blobB: new THREE.Color("#C8860A"),
-  }).current;
-
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock }) => {
+    if (!grpRef.current) return;
     const t = clock.getElapsedTime();
-
-    /* Counter-clockwise — black leaves */
-    if (leafGrpRef.current) leafGrpRef.current.rotation.z -= LEAF_SPEED * delta;
-    /* Clockwise — metallic blue diamonds */
-    if (diamGrpRef.current) diamGrpRef.current.rotation.z += DIAM_SPEED * delta;
-
-    /* Color oscillation: vivid blue → amber gold → back */
-    const ph = (Math.sin(t * 0.42) + 1) * 0.5;
-    blueMat.color.copy(C.blueA).lerp(C.blueB, ph);
-    blueMat.emissive.copy(C.blueA).lerp(C.blueB, ph).multiplyScalar(0.2);
-    diamWireMat.color.copy(C.wireA).lerp(C.wireB, ph);
-
-    /* Center blob */
-    if (blobMatRef.current) {
-      blobMatRef.current.uniforms.uTime.value = t;
-      const ampTarget = isOpen ? 0.22 : isHovered ? 0.12 : 0.05;
-      const cur = blobMatRef.current.uniforms.uAmp.value;
-      blobMatRef.current.uniforms.uAmp.value += (ampTarget - cur) * 0.05;
-
-      /* Blob colour also blue → gold */
-      const bph = (Math.sin(t * 0.58 + 1.4) + 1) * 0.5;
-      blobMatRef.current.uniforms.uColor.value
-        .copy(C.blobA).lerp(C.blobB, bph);
-    }
+    const boost = active ? 1.6 : 1;
+    grpRef.current.rotation.x = Math.sin(t * speed * boost + phase) * (Math.PI / 2.1);
   });
 
   return (
+    <group ref={grpRef} position={[x, 0, 0]}>
+      <mesh geometry={geo} material={mat} />
+      <lineSegments geometry={edge} material={edgeMat} />
+    </group>
+  );
+}
+
+/* ── Center gold assembly — outer diamond (fixed) + inner diamond (subtle spin) ── */
+function CenterGold({ active }) {
+  const innerRef = useRef();
+  const outerGeo = useMemo(() => {
+    const g = new THREE.ExtrudeGeometry(makeDiamond(GOLD_W, GOLD_H), EXT);
+    g.translate(0, 0, -EXT.depth / 2);
+    return g;
+  }, []);
+  const innerGeo = useMemo(() => {
+    const g = new THREE.ExtrudeGeometry(makeDiamond(GOLD_W * 0.42, GOLD_H * 0.42), EXT);
+    g.translate(0, 0, -EXT.depth / 2);
+    return g;
+  }, []);
+  const outerMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(COL_GOLD), metalness: 0.7, roughness: 0.18,
+    emissive: new THREE.Color(COL_GOLD), emissiveIntensity: 0.25, side: THREE.DoubleSide,
+  }), []);
+  const innerMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(COL_INNER), metalness: 0.4, roughness: 0.3, side: THREE.DoubleSide,
+  }), []);
+
+  useFrame(({ clock }) => {
+    if (!innerRef.current) return;
+    const t = clock.getElapsedTime();
+    innerRef.current.rotation.z = t * (active ? 1.4 : 0.5);
+  });
+
+  return (
+    <group position={[X_GOLD, 0, 0]}>
+      <mesh geometry={outerGeo} material={outerMat} />
+      <mesh ref={innerRef} geometry={innerGeo} material={innerMat} position={[0, 0, 0.03]} />
+    </group>
+  );
+}
+
+/* ── Strut lines: horizontal spine + diagonal braces from pink tips ── */
+function Struts() {
+  const lineMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: "#999999", transparent: true, opacity: 0.35,
+  }), []);
+
+  const points = useMemo(() => {
+    const spine = new Float32Array([
+      -X_PINK - PINK_H, 0, 0,
+       X_PINK + PINK_H, 0, 0,
+    ]);
+    /* Diagonal braces: from each pink's top tip down toward its neighboring blue */
+    const braceL = new Float32Array([
+      -X_PINK, PINK_H, 0,   -X_BLUE, BLUE_H * 0.3, 0,
+    ]);
+    const braceR = new Float32Array([
+       X_PINK, PINK_H, 0,    X_BLUE, BLUE_H * 0.3, 0,
+    ]);
+    return { spine, braceL, braceR };
+  }, []);
+
+  const makeGeo = arr => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+    return g;
+  };
+
+  return (
     <>
-      {/* Lighting — key from upper-right, fill from left, gold rim from below */}
-      <ambientLight intensity={0.45} />
-      <pointLight position={[2,  2, 2.5]} intensity={6.0} color="#ffffff" />
-      <pointLight position={[-2, 1, 2.0]} intensity={4.0} color="#60a5fa" />
-      <pointLight position={[0, -3, 1.5]} intensity={2.0} color="#D4A843" />
-
-      {/* ── BLACK LEAF GROUP — counter-clockwise ── */}
-      <group ref={leafGrpRef}>
-        {leafGeos.map((g, i) => (
-          <mesh key={i} geometry={g} material={blackMat} />
-        ))}
-        {leafWires.map((g, i) => (
-          <lineSegments key={`lw${i}`} geometry={g} material={leafWireMat} />
-        ))}
-      </group>
-
-      {/* ── METALLIC BLUE DIAMOND GROUP — clockwise, slightly in front ── */}
-      <group ref={diamGrpRef} position={[0, 0, 0.015]}>
-        {diamGeos.map((g, i) => (
-          <mesh key={i} geometry={g} material={blueMat} />
-        ))}
-        {diamWires.map((g, i) => (
-          <lineSegments key={`dw${i}`} geometry={g} material={diamWireMat} />
-        ))}
-      </group>
-
-      {/* ── CENTER MORPHING BLOB (blue → gold, responds to state) ── */}
-      <mesh position={[0, 0, 0.04]}>
-        <icosahedronGeometry args={[0.075, 4]} />
-        <shaderMaterial
-          ref={blobMatRef}
-          vertexShader={blobVert}
-          fragmentShader={blobFrag}
-          uniforms={{
-            uTime:  { value: 0 },
-            uAmp:   { value: 0.05 },  // note: uniform name matches vert shader
-            uColor: { value: new THREE.Color("#4a90d9") },
-          }}
-          transparent
-          depthWrite={false}
-        />
-      </mesh>
+      <lineSegments geometry={makeGeo(points.spine)}  material={lineMat} />
+      <lineSegments geometry={makeGeo(points.braceL)} material={lineMat} />
+      <lineSegments geometry={makeGeo(points.braceR)} material={lineMat} />
     </>
   );
 }
 
-function OrbCanvas({ isOpen, isHovered }) {
+/* ── Full scene ── */
+function OrbScene({ active }) {
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <pointLight position={[3, 3, 4]}  intensity={5.5} color="#ffffff" />
+      <pointLight position={[-3, -1, 3]} intensity={3.0} color="#ffb6c9" />
+      <pointLight position={[0, 2, -2]} intensity={2.0} color="#60a5fa" />
+
+      <Struts />
+
+      {/* Far pink diamonds — tip together, same phase */}
+      <TippingDiamond x={-X_PINK} halfW={PINK_W} halfH={PINK_H} color={COL_PINK} phase={0}    speed={TIP_SPEED} active={active} />
+      <TippingDiamond x={ X_PINK} halfW={PINK_W} halfH={PINK_H} color={COL_PINK} phase={0}    speed={TIP_SPEED} active={active} />
+
+      {/* Blue diamonds — tip opposite phase (π offset = counter motion) */}
+      <TippingDiamond x={-X_BLUE} halfW={BLUE_W} halfH={BLUE_H} color={COL_BLUE} phase={Math.PI} speed={TIP_SPEED} active={active} />
+      <TippingDiamond x={ X_BLUE} halfW={BLUE_W} halfH={BLUE_H} color={COL_BLUE} phase={Math.PI} speed={TIP_SPEED} active={active} />
+
+      {/* Gold center — rotationally constant, inner diamond subtly spins */}
+      <CenterGold active={active} />
+    </>
+  );
+}
+
+function OrbCanvas({ active }) {
   return (
     <Canvas
-      camera={{ position: [0, 0, ORB_CAM_Z], fov: 50 }}
-      style={{ width: ORB_CANVAS, height: ORB_CANVAS }}
-      gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+      camera={{ position: [0, 0, ORB_CAM_Z], fov: 40 }}
+      style={{ width: ORB_CANVAS, height: ORB_CANVAS, display: "block" }}
+      gl={{ alpha: true, antialias: true }}
     >
-      <OrbScene isOpen={isOpen} isHovered={isHovered} />
+      <OrbScene active={active} />
     </Canvas>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   POPUP + TRIGGER SHELL
+   OrbMenu — popup shell unchanged from previous builds
 ───────────────────────────────────────────────────────────── */
 export default function OrbMenu() {
-  const [open,    setOpen]    = useState(false);
-  const [hovered, setHovered] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const wrapRef  = useRef(null);
   const orbRef   = useRef(null);
@@ -295,8 +225,8 @@ export default function OrbMenu() {
 
   useEffect(() => {
     gsap.fromTo(orbRef.current,
-      { opacity: 0, scale: 0.5, y: 20 },
-      { opacity: 1, scale: 1, y: 0, duration: 1.0, delay: 2.8, ease: "back.out(1.7)" }
+      { opacity: 0, scale: 0.6, y: 16 },
+      { opacity: 1, scale: 1, y: 0, duration: 1.0, delay: 2.8, ease: "back.out(1.6)" }
     );
   }, []);
 
@@ -336,29 +266,28 @@ export default function OrbMenu() {
       ref={wrapRef}
       style={{
         position: "fixed", bottom: 28, right: 28, zIndex: 800,
-        display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10,
+        display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8,
       }}
     >
-      {/* Popup card */}
       <div
         ref={popupRef}
         style={{
           background: "rgba(5,5,9,0.96)",
           backdropFilter: "blur(28px)", WebkitBackdropFilter: "blur(28px)",
           borderRadius: 18,
-          border: "1px solid rgba(26,74,138,0.28)",
+          border: "1px solid rgba(242,182,196,0.20)",
           padding: "20px 24px 16px",
           minWidth: 172,
           opacity: 0, visibility: "hidden", pointerEvents: "none",
           transform: "translateY(10px) scale(0.95)",
-          boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 48px rgba(26,74,138,0.15), inset 0 1px 0 rgba(255,255,255,0.04)",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.7), 0 0 48px rgba(242,182,196,0.10), inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", marginBottom: 16 }}>
           {NAV_ITEMS.map(({ label, href }) => (
             <a key={label} href={href} className="orb-nav" onClick={() => setOpen(false)}
               style={{ fontFamily:"'Array',monospace", fontSize:"1.05rem", letterSpacing:".04em", textTransform:"uppercase", color:"#F9F9F7", textDecoration:"none", padding:"5px 0", display:"block", transition:"color .16s" }}
-              onMouseEnter={e => e.currentTarget.style.color = "#4a90d9"}
+              onMouseEnter={e => e.currentTarget.style.color = "#2E63EB"}
               onMouseLeave={e => e.currentTarget.style.color = "#F9F9F7"}
             >{label}</a>
           ))}
@@ -375,25 +304,22 @@ export default function OrbMenu() {
         </div>
       </div>
 
-      {/* Orb trigger */}
       <div
         ref={orbRef}
         data-cursor={open ? "Close" : "Menu"}
         onClick={() => setOpen(o => !o)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         style={{
           opacity: 0, cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-          filter: `drop-shadow(0 0 ${open || hovered ? 22 : 8}px rgba(26,74,138,${open || hovered ? 0.75 : 0.38}))`,
-          transition: "filter .42s ease",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+          filter: `drop-shadow(0 0 ${open ? 20 : 9}px rgba(242,182,196,${open ? 0.55 : 0.3}))`,
+          transition: "filter .4s ease",
         }}
       >
-        <OrbCanvas isOpen={open} isHovered={hovered} />
+        <OrbCanvas active={open} />
         <span style={{
           fontFamily: "'Space Mono',monospace", fontSize: ".46rem",
           letterSpacing: ".22em", textTransform: "uppercase",
-          color: open ? "#4a90d9" : "#555", transition: "color .3s",
+          color: open ? "#2E63EB" : "#555", transition: "color .3s",
         }}>
           {open ? "close" : "menu"}
         </span>
