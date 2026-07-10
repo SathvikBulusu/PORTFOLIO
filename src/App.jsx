@@ -9,6 +9,8 @@ import OrbMenu   from "./components/OrbMenu";
 import Work      from "./components/Work";
 import Writing   from "./components/Writing";
 import Projects  from "./components/Projects";
+import Frames    from "./components/Frames";
+import Movies    from "./components/Movies";
 import Footer    from "./components/Footer";
 
 /* ── Journey arc cards ── */
@@ -335,6 +337,8 @@ export default function App() {
         <Work />
         <Projects />
         <Writing />
+        <Frames />
+        <Movies />
         {/* VisitorGraph removed — views counter lives in Hero top-left */}
         <Footer />
       </div>

@@ -7,7 +7,7 @@ import gsap from "gsap";
 
 const NAV_ITEMS = [
   { label: "Work",       href: "#work" },
-  { label: "Writing",    href: "#writing" },
+  { label: "Thoughts",   href: "#writing" },
   { label: "Projects",   href: "#projects" },
   { label: "Frames",     href: "#frames" },
   { label: "Movie List", href: "#movies" },
@@ -219,7 +219,7 @@ export default function OrbMenu() {
     <div
       ref={wrapRef}
       style={{
-        position: "fixed", bottom: 28, right: 28, zIndex: 800,
+        position: "fixed", bottom: 80, right: 28, zIndex: 800,
         display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8,
       }}
     >
