@@ -1,8 +1,4 @@
-/* src/components/InfluencesDiamond.jsx
-   A single 3D bipyramid diamond that lives in the Hero.
-   Colors match the OrbMenu palette exactly. Spins clockwise forever.
-   Click → fullscreen quotes overlay.
-*/
+/* src/components/InfluencesDiamond.jsx */
 
 import { useRef, useState, useEffect, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
@@ -14,94 +10,95 @@ const ARRAY = "'Array', monospace";
 const MONO  = "'Space Mono', monospace";
 const NIPPO = "'Nippo', sans-serif";
 
-/* ═══════════════════════════════════════════════════════════════
-   QUOTES — mixed pool from every show/film/anime that motivates you.
-   Fill this in; scaffold entries included so it never renders empty.
-═══════════════════════════════════════════════════════════════ */
 const QUOTES = [
   {
     show: "Sons of Anarchy",
     quote: "It's hard not to hate. People, things, institutions. When they break your spirit and take pleasure in watching you bleed, hate is the only feeling that makes sense. But I know what hate does to a man. Tears him apart. Turns him into something he's not. Something he promised himself he'd never become.",
     attr: "— Jax Teller",
   },
-  {
-    show: "Billions",
-    quote: "Starvation makes the brain run faster.",
-    attr: "",
-  },
+  { show: "Billions", quote: "Starvation makes the brain run faster.", attr: "" },
   { show: "Add a quote", quote: "Something that moved you.", attr: "" },
   { show: "Add a quote", quote: "A line you carry with you.", attr: "" },
   { show: "Add a quote", quote: "Words that changed how you see things.", attr: "" },
 ];
 
-/* ── Colors — brighter, higher-contrast; readable against warm-white bg ── */
-const OUTER = "#0A0A0B";   /* near-black outer shell — reads on warm white */
-const INNER = "#4C6FE0";   /* vivid periwinkle — pops against black shell */
+/* ── Colors — matches site aesthetic: black + charcoal, no color ── */
+const GEM_COLOR = "#0A0A0B";
 
-/* ── Bipyramid geometry (4-sided cones joined at the belt) ── */
-function useBipyramid(r, h) {
-  return useMemo(() => {
-    const top = new THREE.ConeGeometry(r, h, 4);
-    top.translate(0, h / 2, 0);
-    const bot = new THREE.ConeGeometry(r, h, 4);
+/* ── One clean bipyramid, single group rotation ──
+   The trick to "every facet visible" is:
+   1. Low-poly cones (only 4–5 sides) so facets are BIG, not smooth
+   2. Rotate on Y axis so the vertical-belt facets sweep past camera
+   3. Slight tilt on Z so tips angle toward viewer, revealing top/bottom faces
+   4. Multiple lights from opposing angles so light-dark transitions happen
+      as each facet turns through them
+*/
+function Gem() {
+  const groupRef = useRef();
+
+  const geo = useMemo(() => {
+    /* 5-sided bipyramid — belt has 5 wide facets. Odd number so no two
+       facets face camera at the same time — always dynamic profile. */
+    const top = new THREE.ConeGeometry(0.62, 1.15, 5);
+    top.translate(0, 0.575, 0);
+    const bot = new THREE.ConeGeometry(0.62, 1.15, 5);
     bot.rotateZ(Math.PI);
-    bot.translate(0, -h / 2, 0);
+    bot.translate(0, -0.575, 0);
     return { top, bot };
-  }, [r, h]);
-}
+  }, []);
 
-/* ── Diamond mesh: outer larger peach shell + inner smaller blue core ──
-   Both rotate clockwise. Inner spins slightly faster for parallax. */
-function DiamondMesh({ hovered }) {
-  const outerRef = useRef();
-  const innerRef = useRef();
-  const { top: outerTop, bot: outerBot } = useBipyramid(0.60, 1.00);
-  const { top: innerTop, bot: innerBot } = useBipyramid(0.28, 0.55);
-
-  const outerMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(OUTER), metalness: 0.85, roughness: 0.15,
-    flatShading: true,
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
+    color:     new THREE.Color(GEM_COLOR),
+    metalness: 0.75,
+    roughness: 0.30,
+    flatShading: true,     /* CRITICAL — makes each facet a solid tone */
   }), []);
 
-  const innerMat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(INNER), metalness: 0.75, roughness: 0.12,
-    emissive: new THREE.Color(INNER), emissiveIntensity: 0.30,
-    flatShading: true,
+  /* Wireframe edge overlay — subtle white lines along facet borders.
+     Ensures every edge is visible even in dim spots during rotation. */
+  const edgeGeo = useMemo(() => {
+    const merged = new THREE.BufferGeometry();
+    return {
+      top: new THREE.EdgesGeometry(geo.top),
+      bot: new THREE.EdgesGeometry(geo.bot),
+    };
+  }, [geo]);
+
+  const edgeMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: "#333333", transparent: true, opacity: 0.55,
   }), []);
 
-  useFrame((_, d) => {
-    const boost = hovered ? 1.55 : 1;
-    /* Clockwise = negative Y rotation from front view */
-    if (outerRef.current) outerRef.current.rotation.y -= 0.55 * d * boost;
-    if (innerRef.current) innerRef.current.rotation.y -= 0.82 * d * boost;
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+    /* Clockwise from front view = negative Y rotation.
+       Steady speed — no oscillation, no acceleration. */
+    groupRef.current.rotation.y -= delta * 0.55;
   });
 
   return (
-    <>
-      <group ref={outerRef}>
-        <mesh geometry={outerTop} material={outerMat} />
-        <mesh geometry={outerBot} material={outerMat} />
-      </group>
-      <group ref={innerRef}>
-        <mesh geometry={innerTop} material={innerMat} />
-        <mesh geometry={innerBot} material={innerMat} />
-      </group>
-    </>
+    /* Tilted forward slightly so both top & bottom halves visible */
+    <group ref={groupRef} rotation={[0.15, 0, 0]}>
+      <mesh geometry={geo.top} material={mat} />
+      <mesh geometry={geo.bot} material={mat} />
+      <lineSegments geometry={edgeGeo.top} material={edgeMat} />
+      <lineSegments geometry={edgeGeo.bot} material={edgeMat} />
+    </group>
   );
 }
 
-function DiamondCanvas({ hovered }) {
+function GemCanvas() {
   return (
     <Canvas
-      camera={{ position: [0, 0, 3.2], fov: 42 }}
-      style={{ width: 140, height: 180, display: "block" }}
+      camera={{ position: [0, 0, 3.2], fov: 45 }}
+      style={{ width: 100, height: 130, display: "block" }}
       gl={{ alpha: true, antialias: true }}
     >
-      <ambientLight intensity={0.75} />
-      <pointLight position={[2.5, 2, 3]}  intensity={6.5} color="#ffffff" />
-      <pointLight position={[-2, -1, 2]}  intensity={3.5} color={INNER} />
-      <pointLight position={[0, 3, -1]}   intensity={2.0} color="#ffd9b3" />
-      <DiamondMesh hovered={hovered} />
+      {/* Monochrome lighting — white key + soft warm-white fill, no color casts */}
+      <ambientLight intensity={0.6} />
+      <pointLight position={[3, 2.5, 3]}   intensity={7}   color="#ffffff" />
+      <pointLight position={[-3, -1, 2.5]} intensity={3}   color="#f0efe8" />
+      <pointLight position={[0, 3, -2]}    intensity={2}   color="#ffffff" />
+      <Gem />
     </Canvas>
   );
 }
@@ -113,7 +110,6 @@ const POSITIONS = [
   { left: "14%", top: "48%" },
   { left: "56%", top: "52%" },
   { left: "10%", top: "78%" },
-  { left: "50%", top: "78%" },
 ];
 
 function QuotesOverlay({ onClose }) {
@@ -172,31 +168,23 @@ function QuotesOverlay({ onClose }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Public component — the Hero uses <InfluencesDiamond />
-───────────────────────────────────────────────────────────── */
 export default function InfluencesDiamond() {
-  const [open,    setOpen]    = useState(false);
-  const [hovered, setHovered] = useState(false);
+  const [open, setOpen] = useState(false);
 
   return (
     <>
       <div
         onClick={() => setOpen(true)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         data-cursor="Influences"
         style={{
           cursor: "pointer",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-          transform: hovered ? "translateY(-4px)" : "translateY(0)",
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
           transition: "transform .3s ease",
-          filter: hovered
-            ? `drop-shadow(0 0 22px ${INNER}88)`
-            : "drop-shadow(0 6px 16px rgba(0,0,0,0.08))",
         }}
+        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}
       >
-        <DiamondCanvas hovered={hovered} />
+        <GemCanvas />
         <span style={{
           fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".24em",
           textTransform: "uppercase", color: "#666", fontWeight: 700,

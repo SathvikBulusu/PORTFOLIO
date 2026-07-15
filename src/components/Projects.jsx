@@ -53,8 +53,9 @@ export default function Projects() {
         border: "1px solid #ECEAE4", borderRadius: 12,
         padding: "72px 60px 80px",
         background: "#F9F9F7",
+        display: "flex", flexDirection: "column", alignItems: "center",
       }}>
-        <div ref={headingRef} style={{ marginBottom: 64 }}>
+        <div ref={headingRef} style={{ marginBottom: 64, textAlign: "center" }}>
           <div style={{ fontFamily: MONO, fontSize: ".6rem", letterSpacing: ".28em", textTransform: "uppercase", color: "#666", marginBottom: 10, fontWeight: 700 }}>
             Building
           </div>
@@ -63,22 +64,26 @@ export default function Projects() {
           </div>
         </div>
 
-        {/* Single Miso Labs card */}
+        {/* Single Miso Labs card — centered */}
         <div
           ref={cardRef}
           data-cursor="In Progress"
           style={{
             border: "1px solid #0A0A0B",
             padding: "36px 32px",
-            maxWidth: 420,
+            width: "100%", maxWidth: 420,
             marginBottom: 32,
             cursor: "pointer",
             background: "#F9F9F7",
-            transition: "background .2s, transform .2s",
+            boxShadow: "0 12px 32px rgba(10,10,11,0.10), 0 4px 12px rgba(10,10,11,0.06)",
+            transition: "background .2s, transform .2s, box-shadow .2s",
             opacity: 0,
+            textAlign: "center",
           }}
           onMouseEnter={e => {
             e.currentTarget.style.background = "#0A0A0B";
+            e.currentTarget.style.transform = "translateY(-4px)";
+            e.currentTarget.style.boxShadow = "0 20px 48px rgba(10,10,11,0.25), 0 6px 18px rgba(10,10,11,0.15)";
             e.currentTarget.querySelector(".pn").style.color   = "#F9F9F7";
             e.currentTarget.querySelector(".pname").style.color = "#F9F9F7";
             e.currentTarget.querySelector(".pdesc").style.color = "#888";
@@ -87,6 +92,8 @@ export default function Projects() {
           }}
           onMouseLeave={e => {
             e.currentTarget.style.background = "#F9F9F7";
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 12px 32px rgba(10,10,11,0.10), 0 4px 12px rgba(10,10,11,0.06)";
             e.currentTarget.querySelector(".pn").style.color   = "#666";
             e.currentTarget.querySelector(".pname").style.color = "#0A0A0B";
             e.currentTarget.querySelector(".pdesc").style.color = "#666";

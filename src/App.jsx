@@ -11,6 +11,7 @@ import Writing   from "./components/Writing";
 import Projects  from "./components/Projects";
 import Frames     from "./components/Frames";
 import InfluencesDiamond from "./components/InfluencesDiamond";
+import LocationBox       from "./components/LocationBox";
 import Footer    from "./components/Footer";
 
 /* ── Journey arc cards ── */
@@ -208,11 +209,18 @@ function ParticleSathvik() {
   return <canvas ref={cRef} style={{ display:"block", width:"88vw", height:"clamp(100px,16vh,180px)", position:"relative", zIndex:2 }} />;
 }
 
-/* ── StoryPopup — "My Journey So Far" ── */
+/* ── StoryPopup — "Journey" with Work Experience shortcut tab ── */
 function StoryPopup({ isOpen, onClose }) {
+  const goToWork = () => {
+    onClose();
+    setTimeout(() => {
+      const el = document.getElementById("work");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 350);
+  };
+
   return (
     <div className={`story-pop ${isOpen ? "open" : "closed"}`} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      {/* X close button — fixed top-right, always visible */}
       <button
         onClick={onClose}
         style={{
@@ -226,9 +234,44 @@ function StoryPopup({ isOpen, onClose }) {
       </button>
 
       <div style={{ maxWidth:600, width:"100%", position:"relative" }}>
-        <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".52rem", letterSpacing:".3em", textTransform:"uppercase", color:"#bbb", marginBottom:48 }}>
-          My Journey So Far
+
+        {/* ── Two tabs at top ── */}
+        <div style={{ display:"flex", gap:8, marginBottom:44 }}>
+          <button
+            onClick={goToWork}
+            style={{
+              fontFamily:"'Space Mono',monospace", fontSize:".58rem", letterSpacing:".2em",
+              textTransform:"uppercase", color:"#666", fontWeight:700,
+              background:"transparent", border:"1px solid #ECEAE4", borderRadius:100,
+              padding:"8px 18px", cursor:"pointer",
+              transition:"all .2s",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = "#0A0A0B";
+              e.currentTarget.style.color = "#F9F9F7";
+              e.currentTarget.style.borderColor = "#0A0A0B";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#666";
+              e.currentTarget.style.borderColor = "#ECEAE4";
+            }}
+          >
+            Work Experience
+          </button>
+          <button
+            disabled
+            style={{
+              fontFamily:"'Space Mono',monospace", fontSize:".58rem", letterSpacing:".2em",
+              textTransform:"uppercase", color:"#F9F9F7", fontWeight:700,
+              background:"#0A0A0B", border:"1px solid #0A0A0B", borderRadius:100,
+              padding:"8px 18px", cursor:"default",
+            }}
+          >
+            My Journey So Far
+          </button>
         </div>
+
         <div style={{ position:"relative" }}>
           <div style={{ position:"absolute", left:3, top:12, bottom:12, width:1, background:"#ECEAE4" }} />
           {ARC_CARDS.map((c, i) => (
@@ -293,9 +336,8 @@ function Hero({ onStory, storyOpen }) {
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:12 }}>
           <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".54rem", letterSpacing:".14em", color:"#555", textAlign:"right", lineHeight:1.7 }}>LOCAL TIME<br />{time} IST</div>
-          {/* Renamed: "How I got here" → "My Journey So Far" */}
           <button className={`sb${storyOpen ? " on" : ""}`} onClick={onStory} data-cursor="Story">
-            My Journey So Far
+            Journey
           </button>
         </div>
       </div>
@@ -306,9 +348,14 @@ function Hero({ onStory, storyOpen }) {
         </div>
       </div>
 
-      {/* Influences diamond — mid-left, above where location box will sit */}
-      <div style={{ position: "absolute", top: "38%", left: 48, transform: "translateY(-50%)", zIndex: 3 }}>
+      {/* Influences diamond — left side, mid-lower, above location box */}
+      <div style={{ position: "absolute", top: "55%", left: 60, transform: "translateY(-50%)", zIndex: 3 }}>
         <InfluencesDiamond />
+      </div>
+
+      {/* India location box — bottom-left */}
+      <div style={{ position: "absolute", bottom: 40, left: 48, zIndex: 3 }}>
+        <LocationBox />
       </div>
     </section>
   );
