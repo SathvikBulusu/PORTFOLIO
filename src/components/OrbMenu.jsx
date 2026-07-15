@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { label: "Thoughts",   href: "#writing" },
   { label: "Projects",   href: "#projects" },
   { label: "Frames",     href: "#frames" },
-  { label: "Movie List", href: "#movies" },
+  { label: "Resume",     href: "/resume.pdf" },
 ];
 const SOCIALS = [
   { l: "LinkedIn", h: "https://linkedin.com/in/sathvikbulusu" },
@@ -238,13 +238,18 @@ export default function OrbMenu() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", marginBottom: 16 }}>
-          {NAV_ITEMS.map(({ label, href }) => (
-            <a key={label} href={href} className="orb-nav" onClick={() => setOpen(false)}
+          {NAV_ITEMS.map(({ label, href }) => {
+            const external = href.startsWith("/resume") || href.startsWith("http");
+            return (
+            <a key={label} href={href} className="orb-nav"
+              onClick={() => setOpen(false)}
+              {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               style={{ fontFamily:"'Array',monospace", fontSize:"1.05rem", letterSpacing:".04em", textTransform:"uppercase", color:"#F9F9F7", textDecoration:"none", padding:"5px 0", display:"block", transition:"color .16s" }}
               onMouseEnter={e => e.currentTarget.style.color = "#7FA0E8"}
               onMouseLeave={e => e.currentTarget.style.color = "#F9F9F7"}
             >{label}</a>
-          ))}
+            );
+          })}
         </div>
         <div style={{ height: 1, background: "rgba(255,255,255,0.07)", marginBottom: 14 }} />
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>

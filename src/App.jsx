@@ -9,8 +9,8 @@ import OrbMenu   from "./components/OrbMenu";
 import Work      from "./components/Work";
 import Writing   from "./components/Writing";
 import Projects  from "./components/Projects";
-import Frames    from "./components/Frames";
-import Movies    from "./components/Movies";
+import Frames     from "./components/Frames";
+import InfluencesDiamond from "./components/InfluencesDiamond";
 import Footer    from "./components/Footer";
 
 /* ── Journey arc cards ── */
@@ -305,6 +305,11 @@ function Hero({ onStory, storyOpen }) {
           Hey, I am Sathvik. I love building systems that simplify complex problems. Most recently, I built an end-to-end AI product for the Consumer Insights team, along with analytics and AI voice-agent workflows.
         </div>
       </div>
+
+      {/* Influences diamond — mid-left, above where location box will sit */}
+      <div style={{ position: "absolute", top: "38%", left: 48, transform: "translateY(-50%)", zIndex: 3 }}>
+        <InfluencesDiamond />
+      </div>
     </section>
   );
 }
@@ -338,8 +343,6 @@ export default function App() {
         <Projects />
         <Writing />
         <Frames />
-        <Movies />
-        {/* VisitorGraph removed — views counter lives in Hero top-left */}
         <Footer />
       </div>
     </>

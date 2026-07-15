@@ -1,8 +1,6 @@
 /* src/components/Frames.jsx */
 
-import { useRef, useState, useEffect, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { useRef, useState, useEffect } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { getLenis } from "./LenisProvider";
@@ -13,410 +11,215 @@ const photoGlob = import.meta.glob(
   "../photos/*.{jpg,jpeg,png,webp,JPG,JPEG,PNG,WEBP}",
   { eager: true }
 );
-const ALL_PHOTOS = Object.values(photoGlob).map(m => m.default);
+const PHOTOS = Object.values(photoGlob).map((m, i) => ({
+  id:  `p${i}`,
+  src: m.default,
+}));
 
 const ARRAY = "'Array', monospace";
 const MONO  = "'Space Mono', monospace";
 const NIPPO = "'Nippo', sans-serif";
 
-/* ── Photo categories ── */
-const CATEGORIES = [
-  { id: "buildings", label: "Buildings" },
-  { id: "objects",   label: "Objects"   },
-  { id: "nature",    label: "Nature"    },
-  { id: "people",    label: "People"    },
-  { id: "scenes",    label: "Scenes"    },
-];
-
-/* ── Influences — scaffold, user fills in quotes ── */
-const INFLUENCES = {
-  series: [
-    {
-      show: "Sons of Anarchy",
-      quote:
-        "It's hard not to hate. People, things, Institutions. When they break your spirit and take pleasure in watching you bleed... hate is the only feeling that makes sense. But I know what hate does to a man. Tears him apart. Turns him into something he's not. Something he promised he'd never become.",
-      attr: "— Jax Teller",
-    },
-    {
-      show: "Billions",
-      quote: "Starvation makes the brain run faster.",
-      attr: "",
-    },
-    {
-      show: "Add your series",
-      quote: "Add a quote that stayed with you.",
-      attr: "— Character",
-    },
-  ],
-  movies: [
-    { show: "Add your film",   quote: "A line you won't forget.", attr: "" },
-    { show: "Add another",     quote: "Something that changed how you see things.", attr: "" },
-  ],
-  anime: [
-    { show: "Add your anime",  quote: "A moment that hit different.", attr: "" },
-    { show: "Add another",     quote: "Something that stayed.", attr: "" },
-  ],
-};
-
-/* ── Stable snow flake data ── */
-const SNOW = Array.from({ length: 36 }, (_, i) => ({
-  left:  `${(i * 2.78 + (i % 4) * 5) % 100}%`,
-  size:   1.4 + (i % 3) * 0.7,
-  dur:   `${4 + i % 5}s`,
-  delay: `${(i * 0.27) % 4.2}s`,
-  drift: `${(i % 2 ? 1 : -1) * (5 + i % 12)}px`,
-  op:     0.18 + (i % 5) * 0.08,
-}));
-
-const SNOW_CSS = `
-@keyframes sf {
-  0%   { transform:translateY(-12px) translateX(0); opacity:0; }
-  6%   { opacity:var(--op); }
-  94%  { opacity:var(--op); }
-  100% { transform:translateY(110vh) translateX(var(--drift)); opacity:0; }
+/* Load & save likes in localStorage — one integer per photo id */
+function loadLikes() {
+  try {
+    return JSON.parse(localStorage.getItem("at23_likes") || "{}");
+  } catch { return {}; }
 }
-.sf {
-  position:absolute; border-radius:50%; background:#fff; top:0;
-  animation: sf var(--dur) var(--delay) linear infinite;
-}
-`;
-
-function SnowLayer() {
-  return (
-    <div style={{ position:"absolute", inset:0, overflow:"hidden", pointerEvents:"none", zIndex:0 }}>
-      <style>{SNOW_CSS}</style>
-      {SNOW.map((f, i) => (
-        <div key={i} className="sf" style={{
-          left: f.left, width: f.size, height: f.size,
-          "--dur": f.dur, "--delay": f.delay,
-          "--drift": f.drift, "--op": f.op,
-        }} />
-      ))}
-    </div>
-  );
+function saveLikes(l) {
+  try { localStorage.setItem("at23_likes", JSON.stringify(l)); } catch {}
 }
 
-/* ─────────────────── 3-D mini diamond for Influences ─────────────────── */
-function useBipyramid(r, h) {
-  return useMemo(() => {
-    const top = new THREE.ConeGeometry(r, h, 4);
-    top.translate(0, h / 2, 0);
-    const bot = new THREE.ConeGeometry(r, h, 4);
-    bot.rotateZ(Math.PI);
-    bot.translate(0, -h / 2, 0);
-    return { top, bot };
-  }, [r, h]);
-}
+/* Heart icon */
+const Heart = ({ filled }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill={filled ? "#e6396f" : "none"} stroke={filled ? "#e6396f" : "currentColor"} strokeWidth="2">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+  </svg>
+);
 
-function MiniDiamond({ color, hovered }) {
-  const grp = useRef();
-  const { top, bot } = useBipyramid(0.5, 0.7);
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(color), metalness: 0.65, roughness: 0.18,
-    flatShading: true,
-  }), [color]);
-
-  useFrame((_, d) => {
-    if (!grp.current) return;
-    grp.current.rotation.y += (hovered ? 0.9 : 0.4) * d;
-  });
-
-  return (
-    <group ref={grp}>
-      <mesh geometry={top} material={mat} />
-      <mesh geometry={bot} material={mat} />
-    </group>
-  );
-}
-
-function DiamondOrb({ color, hovered }) {
-  return (
-    <Canvas
-      camera={{ position: [0, 0, 2.3], fov: 44 }}
-      style={{ width: 110, height: 130, display: "block" }}
-      gl={{ alpha: true, antialias: true }}
-    >
-      <ambientLight intensity={0.5} />
-      <pointLight position={[2, 2, 3]}  intensity={5} color="#fff" />
-      <pointLight position={[-2,-1, 2]} intensity={2} color={color} />
-      <MiniDiamond color={color} hovered={hovered} />
-    </Canvas>
-  );
-}
-
-/* ─────────────────── Photo overlay ─────────────────── */
-function PhotoOverlay({ category, onClose }) {
+/* ── Fullscreen photo viewer ── */
+function PhotoView({ photo, likes, onLike, onClose }) {
   const ref = useRef();
 
   useEffect(() => {
     getLenis()?.stop();
     document.body.style.overflow = "hidden";
-    gsap.fromTo(ref.current, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.out" });
+    gsap.fromTo(ref.current, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power2.out" });
     return () => { document.body.style.overflow = ""; getLenis()?.start(); };
   }, []);
 
   const close = () =>
-    gsap.to(ref.current, { opacity: 0, duration: 0.28, ease: "power2.in", onComplete: onClose });
+    gsap.to(ref.current, { opacity: 0, duration: 0.22, ease: "power2.in", onComplete: onClose });
+
+  const count = likes[photo.id] || 0;
+  const liked = count > 0;
 
   return (
-    <div ref={ref} style={{
+    <div ref={ref} onClick={close} style={{
       position: "fixed", inset: 0, zIndex: 990,
-      background: "rgba(4,4,6,0.97)",
-      display: "flex", flexDirection: "column", overflow: "hidden",
+      background: "rgba(4,4,6,0.94)", backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 40,
     }}>
-      <SnowLayer />
-
-      {/* Header */}
-      <div style={{
-        position: "relative", zIndex: 2,
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "28px 44px",
-        borderBottom: "1px solid rgba(255,255,255,0.07)",
-        flexShrink: 0,
-      }}>
-        <div>
-          <div style={{ fontFamily: MONO, fontSize: ".52rem", letterSpacing: ".24em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>
-            Frames / Photography
-          </div>
-          <div style={{ fontFamily: ARRAY, fontSize: "1.8rem", color: "#F9F9F7", letterSpacing: ".04em", textTransform: "uppercase" }}>
-            {category.label}
-          </div>
-        </div>
-        <button onClick={close} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: ARRAY, fontSize: "1.4rem", color: "#F9F9F7", lineHeight: 1 }}>
-          ✕
-        </button>
-      </div>
-
-      {/* 3-column photo grid — vertically scrollable */}
-      <div style={{
-        position: "relative", zIndex: 2,
-        flex: 1, overflowY: "auto",
-        padding: "28px 44px 44px",
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: 10,
-        alignContent: "start",
-      }}>
-        {ALL_PHOTOS.map((src, i) => (
-          <div key={i} style={{ aspectRatio: "4/3", overflow: "hidden", background: "#111" }}>
-            <img src={src} alt="" draggable={false}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block",
-                opacity: 0.88, transition: "opacity .2s, transform .4s" }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "scale(1.04)"; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = ""; }}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────── Quotes overlay (Influences) ─────────────────── */
-const POSITIONS = [
-  { left: "7%",  top: "12%" },
-  { left: "50%", top: "8%"  },
-  { left: "18%", top: "54%" },
-  { left: "55%", top: "58%" },
-  { left: "6%",  top: "80%" },
-  { left: "48%", top: "78%" },
-];
-
-function QuotesOverlay({ type, onClose }) {
-  const ref = useRef();
-
-  useEffect(() => {
-    getLenis()?.stop();
-    document.body.style.overflow = "hidden";
-    gsap.fromTo(ref.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" });
-    return () => { document.body.style.overflow = ""; getLenis()?.start(); };
-  }, []);
-
-  const close = () =>
-    gsap.to(ref.current, { opacity: 0, duration: 0.3, ease: "power2.in", onComplete: onClose });
-
-  const data = INFLUENCES[type] || [];
-
-  return (
-    <div ref={ref} style={{
-      position: "fixed", inset: 0, zIndex: 995,
-      background: "#020204", overflow: "hidden",
-    }}>
-      <SnowLayer />
-
       <button onClick={close} style={{
-        position: "fixed", top: 28, right: 40, zIndex: 2,
+        position: "fixed", top: 28, right: 40, zIndex: 3,
         background: "none", border: "none", cursor: "pointer",
-        fontFamily: ARRAY, fontSize: "1.4rem", color: "rgba(255,255,255,0.5)",
+        fontFamily: ARRAY, fontSize: "1.4rem", color: "#F9F9F7",
       }}>✕</button>
 
-      {/* Type label */}
-      <div style={{
-        position: "absolute", top: 36, left: 44, zIndex: 2,
-        fontFamily: MONO, fontSize: ".54rem", letterSpacing: ".26em",
-        textTransform: "uppercase", color: "rgba(255,255,255,0.3)",
+      <div onClick={e => e.stopPropagation()} style={{
+        display: "flex", flexDirection: "column", alignItems: "center",
+        maxWidth: "90vw", maxHeight: "88vh", gap: 18,
       }}>
-        Influences / {type}
+        <img src={photo.src} alt="" style={{
+          maxWidth: "100%", maxHeight: "78vh", objectFit: "contain",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+        }} />
+        <button
+          onClick={() => onLike(photo.id)}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "9px 18px",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 100, cursor: "pointer",
+            fontFamily: MONO, fontSize: ".62rem", letterSpacing: ".14em",
+            textTransform: "uppercase",
+            color: liked ? "#e6396f" : "#F9F9F7",
+            transition: "background .2s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.14)"}
+          onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.08)"}
+        >
+          <Heart filled={liked} /> {count} {count === 1 ? "like" : "likes"}
+        </button>
       </div>
-
-      {/* Floating quotes */}
-      {data.map((item, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          left: POSITIONS[i % POSITIONS.length].left,
-          top:  POSITIONS[i % POSITIONS.length].top,
-          maxWidth: 420, zIndex: 1,
-        }}>
-          <div style={{ fontFamily: MONO, fontSize: ".48rem", letterSpacing: ".2em", textTransform: "uppercase", color: "rgba(255,255,255,0.28)", marginBottom: 10 }}>
-            {item.show}
-          </div>
-          <div style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: "clamp(.88rem,1.3vw,1rem)", color: "rgba(255,255,255,0.7)", lineHeight: 1.85 }}>
-            "{item.quote}"
-          </div>
-          {item.attr && (
-            <div style={{ fontFamily: MONO, fontSize: ".44rem", letterSpacing: ".14em", color: "rgba(255,255,255,0.28)", marginTop: 10 }}>
-              {item.attr}
-            </div>
-          )}
-        </div>
-      ))}
     </div>
   );
 }
 
-/* ─────────────────── Main component ─────────────────── */
 export default function Frames() {
-  const [activePhoto,     setActivePhoto]     = useState(null);
-  const [activeInfluence, setActiveInfluence] = useState(null);
-  const [hoveredInf,      setHoveredInf]      = useState(null);
+  const [likes, setLikes] = useState(loadLikes);
+  const [openPhoto, setOpenPhoto] = useState(null);
 
-  const sectionRef  = useRef(null);
-  const itemRefs    = useRef([]);
-  const influenceRef = useRef(null);
+  const sectionRef = useRef(null);
+  const headingRef = useRef(null);
+  const gridRef    = useRef(null);
 
-  /* GSAP reveal for category list items */
   useEffect(() => {
     const ctx = gsap.context(() => {
-      itemRefs.current.forEach((el, i) => {
-        if (!el) return;
-        gsap.fromTo(el,
-          { opacity: 0, x: -48 },
-          {
-            opacity: 1, x: 0, duration: 0.65, ease: "power3.out",
-            scrollTrigger: { trigger: el, start: "top 84%" },
-            delay: i * 0.055,
-          }
-        );
-      });
-      if (influenceRef.current) {
-        gsap.fromTo(influenceRef.current,
-          { opacity: 0, y: 32 },
-          { opacity: 1, y: 0, duration: 0.7, ease: "power2.out",
-            scrollTrigger: { trigger: influenceRef.current, start: "top 78%" } }
-        );
-      }
+      gsap.fromTo(headingRef.current,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1, y: 0, duration: 0.7, ease: "power2.out",
+          scrollTrigger: { trigger: headingRef.current, start: "top 82%" },
+        }
+      );
+      gsap.fromTo(gridRef.current?.querySelectorAll(".ftile"),
+        { opacity: 0, y: 22 },
+        {
+          opacity: 1, y: 0, duration: 0.55, stagger: 0.06, ease: "power2.out",
+          scrollTrigger: { trigger: gridRef.current, start: "top 80%" },
+        }
+      );
     }, sectionRef);
     return () => ctx.revert();
   }, []);
 
+  const handleLike = (id) => {
+    setLikes(prev => {
+      const next = { ...prev, [id]: (prev[id] || 0) + 1 };
+      saveLikes(next);
+      return next;
+    });
+  };
+
+  if (!PHOTOS.length) return null;
+
   return (
-    <section
-      ref={sectionRef}
-      id="frames"
-      style={{ background: "#F9F9F7", paddingTop: 120, borderTop: "1px solid #ECEAE4" }}
+    <section ref={sectionRef} id="frames"
+      style={{ background: "#F9F9F7", padding: "120px 56px 100px", borderTop: "1px solid #ECEAE4" }}
     >
-      {/* ── Section heading ── */}
-      <div style={{ padding: "0 56px", marginBottom: 40 }}>
-        <div style={{ fontFamily: MONO, fontSize: ".62rem", letterSpacing: ".28em", textTransform: "uppercase", color: "#555", marginBottom: 12 }}>
-          Photography
-        </div>
-        <div style={{ fontFamily: ARRAY, fontSize: "clamp(3rem,7vw,5.5rem)", letterSpacing: ".04em", textTransform: "uppercase", color: "#0A0A0B", lineHeight: 1 }}>
-          Frames
-        </div>
-      </div>
-
-      {/* ── Category list — big, animated, clickable ── */}
-      <div style={{ padding: "0 56px 80px", borderBottom: "1px solid #ECEAE4" }}>
-        {CATEGORIES.map((cat, i) => (
-          <div
-            key={cat.id}
-            ref={el => { itemRefs.current[i] = el; }}
-            onClick={() => setActivePhoto(cat)}
-            data-cursor="Open"
-            style={{
-              display: "flex", alignItems: "baseline", gap: 28,
-              padding: "16px 0",
-              borderBottom: i < CATEGORIES.length - 1 ? "1px solid rgba(10,10,11,0.06)" : "none",
-              cursor: "pointer", opacity: 0,
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.querySelector(".cl").style.color = "#9333EA";
-              e.currentTarget.querySelector(".cn").style.color = "#9333EA";
-              e.currentTarget.querySelector(".cv").style.opacity = "1";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.querySelector(".cl").style.color = "#0A0A0B";
-              e.currentTarget.querySelector(".cn").style.color = "#bbb";
-              e.currentTarget.querySelector(".cv").style.opacity = "0";
-            }}
-          >
-            <span className="cn" style={{ fontFamily: MONO, fontSize: ".52rem", letterSpacing: ".2em", color: "#bbb", flexShrink: 0, width: 26, transition: "color .2s" }}>
-              0{i + 1}
-            </span>
-            <span className="cl" style={{ fontFamily: ARRAY, fontSize: "clamp(2.6rem,5.5vw,4.8rem)", letterSpacing: ".03em", textTransform: "uppercase", color: "#0A0A0B", lineHeight: 1, transition: "color .2s" }}>
-              {cat.label}
-            </span>
-            <span className="cv" style={{ marginLeft: "auto", fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".16em", textTransform: "uppercase", color: "#9333EA", alignSelf: "center", opacity: 0, transition: "opacity .2s" }}>
-              View →
-            </span>
+      <div ref={headingRef} style={{
+        display: "flex", justifyContent: "space-between", alignItems: "baseline",
+        marginBottom: 56, maxWidth: 1400, margin: "0 auto 56px",
+      }}>
+        <div>
+          <div style={{ fontFamily: MONO, fontSize: ".6rem", letterSpacing: ".28em", textTransform: "uppercase", color: "#666", marginBottom: 10, fontWeight: 700 }}>
+            Photography
           </div>
-        ))}
+          <div style={{ fontFamily: ARRAY, fontSize: "clamp(2.6rem,5.5vw,4.4rem)", letterSpacing: ".04em", textTransform: "uppercase", color: "#0A0A0B", lineHeight: 1 }}>
+            Frames
+          </div>
+        </div>
+        <div style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: ".92rem", color: "#666", maxWidth: 280, textAlign: "right", lineHeight: 1.7 }}>
+          Things I saw and thought were worth keeping.
+        </div>
       </div>
 
-      {/* ── Influences ── */}
-      <div ref={influenceRef} style={{ padding: "80px 56px 100px", opacity: 0 }}>
-        <div style={{ fontFamily: MONO, fontSize: ".62rem", letterSpacing: ".28em", textTransform: "uppercase", color: "#555", marginBottom: 12 }}>
-          What I Watch
-        </div>
-        <div style={{ fontFamily: ARRAY, fontSize: "clamp(2rem,3.5vw,3rem)", letterSpacing: ".04em", textTransform: "uppercase", color: "#0A0A0B", lineHeight: 1, marginBottom: 56 }}>
-          Influences
-        </div>
-
-        <div style={{ display: "flex", gap: 52, alignItems: "flex-end" }}>
-          {[
-            { type: "series", label: "Series", color: "#E0B888" },
-            { type: "movies", label: "Movies", color: "#7FA0E8" },
-            { type: "anime",  label: "Anime",  color: "#D4A855" },
-          ].map(inf => (
+      <div ref={gridRef} style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gap: 12,
+        maxWidth: 1400, margin: "0 auto",
+      }}>
+        {PHOTOS.map(p => {
+          const count = likes[p.id] || 0;
+          return (
             <div
-              key={inf.type}
-              onClick={() => setActiveInfluence(inf.type)}
-              onMouseEnter={() => setHoveredInf(inf.type)}
-              onMouseLeave={() => setHoveredInf(null)}
-              data-cursor={inf.label}
+              key={p.id}
+              className="ftile"
+              onClick={() => setOpenPhoto(p)}
+              data-cursor="Open"
               style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                position: "relative",
+                aspectRatio: "4/3",
+                overflow: "hidden",
+                background: "#ECEAE4",
                 cursor: "pointer",
-                transform: hoveredInf === inf.type ? "translateY(-6px)" : "translateY(0)",
-                transition: "transform .3s ease",
-                filter: hoveredInf === inf.type ? `drop-shadow(0 0 14px ${inf.color}66)` : "none",
+                opacity: 0,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.querySelector("img").style.transform = "scale(1.05)";
+                e.currentTarget.querySelector(".flike").style.opacity = "1";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.querySelector("img").style.transform = "";
+                e.currentTarget.querySelector(".flike").style.opacity = count > 0 ? "1" : "0";
               }}
             >
-              <DiamondOrb color={inf.color} hovered={hoveredInf === inf.type} />
-              <span style={{ fontFamily: MONO, fontSize: ".52rem", letterSpacing: ".2em", textTransform: "uppercase", color: "#555" }}>
-                {inf.label}
-              </span>
+              <img src={p.src} alt="" draggable={false}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block",
+                  transition: "transform .5s ease" }}
+              />
+              <div
+                className="flike"
+                style={{
+                  position: "absolute", bottom: 10, right: 10,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "4px 10px", borderRadius: 100,
+                  background: "rgba(0,0,0,0.55)",
+                  color: count > 0 ? "#e6396f" : "#F9F9F7",
+                  fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".12em",
+                  textTransform: "uppercase",
+                  opacity: count > 0 ? 1 : 0,
+                  transition: "opacity .2s",
+                }}
+              >
+                <Heart filled={count > 0} /> {count}
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Overlays */}
-      {activePhoto && (
-        <PhotoOverlay category={activePhoto} onClose={() => setActivePhoto(null)} />
-      )}
-      {activeInfluence && (
-        <QuotesOverlay type={activeInfluence} onClose={() => setActiveInfluence(null)} />
+      {openPhoto && (
+        <PhotoView
+          photo={openPhoto}
+          likes={likes}
+          onLike={handleLike}
+          onClose={() => setOpenPhoto(null)}
+        />
       )}
     </section>
   );

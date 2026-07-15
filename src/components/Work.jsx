@@ -17,7 +17,7 @@ const ORIGIN_STORY = {
   body: " I joined Moneyview's Consumer Insights team to understand how primary & research actually worked before building AI Automations. Spent the first 2 Months in the process of learning how qualitative studies ran, where responses got manually coded, where time actually disappeared. Parallely Started Exploring Voice Agents Along this path and i realised there's no AI infrasturcture for the CI Team, So i started getting accesses to build the foundation first: LLM provider accesses(Gemini, Claude & Open Source Models ( Qwen 3.5 thinking , Nvidia Nemotron , llama3.1 etc)), cloud tooling(Bigquery,GCP).Got set up on Metabase, BigQuery, Cloud Anix, and Confluence. Then started building things that actually mattered.",
 };
 
-const AI_TAGS = ["Python", "Multi LLM Support", "Async Processing", "Next Js","Shadcn","Analaytics"];
+const AI_TAGS = ["Python", "Multi LLM Support", "Async Processing", "Next Js","Shadcn","Analaytics"];         
 
 const PRIMA_ENTRY = {
   name: "PRIMA",

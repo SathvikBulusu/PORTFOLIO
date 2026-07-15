@@ -1,33 +1,139 @@
-export default function Projects() {
-  return (
-    <section id="projects" style={{ background:"#F9F9F7", padding:"96px 48px", borderTop:"1px solid #ECEAE4" }}>
-      <div className="rv" style={{ marginBottom:52 }}>
-        <h2 style={{ fontFamily:"'Array',monospace", fontSize:"clamp(2rem,5vw,4rem)", letterSpacing:".04em", textTransform:"uppercase", color:"#0A0A0B", lineHeight:1.05 }}>
-          Projects.
-        </h2>
-      </div>
+/* src/components/Projects.jsx */
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
-        {/* Speed Run — active project */}
-        <div className="rv" data-cursor="Active" style={{ border:"1px solid #0A0A0B", padding:"28px 24px" }}>
-          <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".46rem", letterSpacing:".18em", textTransform:"uppercase", color:"#0A0A0B", marginBottom:8 }}>01 - Active</div>
-          <div style={{ fontFamily:"'Array',monospace", fontSize:"1.4rem", letterSpacing:".04em", textTransform:"uppercase", color:"#0A0A0B", marginBottom:12, lineHeight:1.1 }}>AI Speed Run</div>
-          <div style={{ fontFamily:"'Nippo',sans-serif", fontWeight:300, fontSize:".92rem", color:"#888", lineHeight:1.65, marginBottom:16 }}>
-            Public documentation of a sprint from DS fundamentals to production AI engineering. No AI-generated code.
+import { useRef, useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const ARRAY = "'Array', monospace";
+const MONO  = "'Space Mono', monospace";
+const NIPPO = "'Nippo', sans-serif";
+
+export default function Projects() {
+  const sectionRef = useRef(null);
+  const headingRef = useRef(null);
+  const cardRef    = useRef(null);
+  const noteRef    = useRef(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.fromTo(headingRef.current,
+        { opacity: 0, y: 24 },
+        {
+          opacity: 1, y: 0, duration: 0.7, ease: "power2.out",
+          scrollTrigger: { trigger: headingRef.current, start: "top 82%" },
+        }
+      );
+      gsap.fromTo(cardRef.current,
+        { opacity: 0, y: 22 },
+        {
+          opacity: 1, y: 0, duration: 0.6, ease: "power2.out",
+          scrollTrigger: { trigger: cardRef.current, start: "top 82%" },
+        }
+      );
+      gsap.fromTo(noteRef.current,
+        { opacity: 0 },
+        {
+          opacity: 1, duration: 0.6, ease: "power2.out", delay: 0.15,
+          scrollTrigger: { trigger: noteRef.current, start: "top 82%" },
+        }
+      );
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section ref={sectionRef} id="projects" style={{
+      background: "#F9F9F7", padding: "120px 56px 100px", borderTop: "1px solid #ECEAE4",
+    }}>
+      {/* Subtle outer container outline */}
+      <div style={{
+        maxWidth: 1400, margin: "0 auto",
+        border: "1px solid #ECEAE4", borderRadius: 12,
+        padding: "72px 60px 80px",
+        background: "#F9F9F7",
+      }}>
+        <div ref={headingRef} style={{ marginBottom: 64 }}>
+          <div style={{ fontFamily: MONO, fontSize: ".6rem", letterSpacing: ".28em", textTransform: "uppercase", color: "#666", marginBottom: 10, fontWeight: 700 }}>
+            Building
           </div>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-            {["NumPy","Pandas","ML","DL","NLP","RAG"].map(t => (
-              <span key={t} style={{ fontFamily:"'Space Mono',monospace", fontSize:".44rem", letterSpacing:".1em", textTransform:"uppercase", color:"#aaa", border:"1px solid #ECEAE4", padding:"2px 7px" }}>{t}</span>
-            ))}
+          <div style={{ fontFamily: ARRAY, fontSize: "clamp(2.6rem,5.5vw,4.4rem)", letterSpacing: ".04em", textTransform: "uppercase", color: "#0A0A0B", lineHeight: 1 }}>
+            Projects
           </div>
         </div>
 
-        {[2,3].map(n => (
-          <div key={n} className="rv" data-cursor="Coming Soon" style={{ border:"1px solid #ECEAE4", padding:"28px 24px" }}>
-            <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".46rem", letterSpacing:".18em", textTransform:"uppercase", color:"#ccc", marginBottom:8 }}>0{n} - Soon</div>
-            <div style={{ fontFamily:"'Array',monospace", fontSize:"1.4rem", letterSpacing:".04em", textTransform:"uppercase", color:"#ccc", lineHeight:1.1 }}>Coming Soon</div>
+        {/* Single Miso Labs card */}
+        <div
+          ref={cardRef}
+          data-cursor="In Progress"
+          style={{
+            border: "1px solid #0A0A0B",
+            padding: "36px 32px",
+            maxWidth: 420,
+            marginBottom: 32,
+            cursor: "pointer",
+            background: "#F9F9F7",
+            transition: "background .2s, transform .2s",
+            opacity: 0,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "#0A0A0B";
+            e.currentTarget.querySelector(".pn").style.color   = "#F9F9F7";
+            e.currentTarget.querySelector(".pname").style.color = "#F9F9F7";
+            e.currentTarget.querySelector(".pdesc").style.color = "#888";
+            e.currentTarget.querySelector(".ptag").style.color  = "#9333EA";
+            e.currentTarget.querySelector(".ptag").style.borderColor = "#9333EA";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "#F9F9F7";
+            e.currentTarget.querySelector(".pn").style.color   = "#666";
+            e.currentTarget.querySelector(".pname").style.color = "#0A0A0B";
+            e.currentTarget.querySelector(".pdesc").style.color = "#666";
+            e.currentTarget.querySelector(".ptag").style.color  = "#0A0A0B";
+            e.currentTarget.querySelector(".ptag").style.borderColor = "#0A0A0B";
+          }}
+        >
+          <div className="pn" style={{
+            fontFamily: MONO, fontSize: ".54rem", letterSpacing: ".22em",
+            textTransform: "uppercase", color: "#666", marginBottom: 14, fontWeight: 700,
+            transition: "color .2s",
+          }}>
+            01
           </div>
-        ))}
+          <div className="pname" style={{
+            fontFamily: ARRAY, fontSize: "1.8rem", letterSpacing: ".03em",
+            textTransform: "uppercase", color: "#0A0A0B", marginBottom: 16, lineHeight: 1.1,
+            transition: "color .2s",
+          }}>
+            Miso Labs
+          </div>
+          <div className="pdesc" style={{
+            fontFamily: NIPPO, fontWeight: 300, fontSize: ".95rem",
+            color: "#666", lineHeight: 1.7, marginBottom: 20,
+            transition: "color .2s",
+          }}>
+            Building.
+          </div>
+          <span className="ptag" style={{
+            display: "inline-block",
+            fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".18em",
+            textTransform: "uppercase", color: "#0A0A0B",
+            border: "1px solid #0A0A0B", padding: "5px 12px",
+            transition: "color .2s, border-color .2s",
+          }}>
+            In Progress
+          </span>
+        </div>
+
+        {/* Simple note — no empty boxes */}
+        <div ref={noteRef} style={{
+          fontFamily: MONO, fontSize: ".58rem", letterSpacing: ".22em",
+          textTransform: "uppercase", color: "#999", fontWeight: 600,
+          opacity: 0,
+        }}>
+          — More coming soon
+        </div>
       </div>
     </section>
   );
