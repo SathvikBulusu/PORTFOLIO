@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { getLenis } from "./LenisProvider";
-import { useWorkFlow } from "./useWorkFlow";
+import { useWorkFlow } from "./useWorkflow";
 import PrimaDiagram from "./PrimaDiagram";
 import mvLogo from "../images/mv.jpg";
 
