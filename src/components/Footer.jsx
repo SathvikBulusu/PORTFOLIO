@@ -2,10 +2,10 @@
    Small, quiet typography. Not a repeat of the orb — a signature. */
 export default function Footer() {
   const links = [
-    { l:"GitHub",   h:"https://github.com/yourusername" },
+    { l:"GitHub",   h:"https://github.com/SathvikBulusu" },
     { l:"Resume",   h:"/resume.pdf" },
-    { l:"LinkedIn", h:"https://linkedin.com/in/sathvikbulusu" },
-    { l:"Email",    h:"mailto:your@email.com" },
+    { l:"LinkedIn", h:"https://www.linkedin.com/in/bulusu-sathvik/" },
+    { l:"Email",    h:"mailto:bulususathvik7890@email.com" },
   ];
 
   return (

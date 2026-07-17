@@ -13,9 +13,9 @@ const NAV_ITEMS = [
   { label: "Resume",     href: "/resume.pdf" },
 ];
 const SOCIALS = [
-  { l: "LinkedIn", h: "https://linkedin.com/in/sathvikbulusu" },
-  { l: "GitHub",   h: "https://github.com/yourusername" },
-  { l: "Email",    h: "mailto:your@email.com" },
+  { l: "LinkedIn", h: "https://www.linkedin.com/in/bulusu-sathvik/" },
+  { l: "GitHub",   h: "https://github.com/SathvikBulusu" },
+  { l: "Email",    h: "mailto:bulususathvik7890@email.com" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
