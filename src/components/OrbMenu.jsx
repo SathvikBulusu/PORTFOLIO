@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 const SOCIALS = [
   { l: "LinkedIn", h: "https://www.linkedin.com/in/bulusu-sathvik/" },
   { l: "GitHub",   h: "https://github.com/SathvikBulusu" },
-  { l: "Email",    h: "mailto:bulususathvik7890@email.com" },
+  { l: "Email",    h: "mailto:bulususathvik7890@gmail.com" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════

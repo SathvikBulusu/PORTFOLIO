@@ -5,7 +5,7 @@ export default function Footer() {
     { l:"GitHub",   h:"https://github.com/SathvikBulusu" },
     { l:"Resume",   h:"/resume.pdf" },
     { l:"LinkedIn", h:"https://www.linkedin.com/in/bulusu-sathvik/" },
-    { l:"Email",    h:"mailto:bulususathvik7890@email.com" },
+    { l:"Email",    h:"mailto:bulususathvik7890@gmail.com" },
   ];
 
   return (

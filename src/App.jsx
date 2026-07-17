@@ -97,6 +97,29 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opa
 .gsq{position:absolute;background:rgba(255,255,255,0.72);border:1px solid rgba(10,10,11,0.10);backdrop-filter:blur(16px) saturate(130%);-webkit-backdrop-filter:blur(16px) saturate(130%);box-shadow:0 8px 32px rgba(0,0,0,0.08),0 2px 8px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,1),inset 0 -1px 0 rgba(0,0,0,0.03);will-change:transform;}
 
 .rv{opacity:0;}
+
+/* ═══════════════════ MOBILE RESPONSIVE ═══════════════════ */
+@media(max-width:900px){
+  /* Frames: 4 → 2 columns */
+  section#frames [style*="gridTemplateColumns"]{grid-template-columns:repeat(2,1fr)!important;}
+  /* Projects card full-width */
+  section#projects [style*="maxWidth:420"]{max-width:100%!important;}
+}
+@media(max-width:640px){
+  /* OrbMenu — move closer to edge on mobile */
+  [style*="bottom: 80"][style*="right: 28"]{bottom:16px!important;right:12px!important;}
+  /* Section padding */
+  section#work,section#projects,section#frames,section#influences,section#writing{
+    padding-left:20px!important;padding-right:20px!important;
+    padding-top:72px!important;padding-bottom:60px!important;
+  }
+  /* Frames: 2 → 1 column */
+  section#frames [style*="gridTemplateColumns"]{grid-template-columns:1fr!important;}
+  /* Journey popup card */
+  .story-pop{padding:12px!important;}
+  /* Hide location box on mobile (too small to interact with) */
+  .loc-wrap{display:none!important;}
+}
 `;
 
 /* ── Hooks ── */
@@ -112,9 +135,16 @@ function useIST() {
 function useViews() {
   const [v, setV] = useState(null);
   useEffect(() => {
-    const SEED = 1247; const stored = localStorage.getItem("at23_v");
-    const n = stored ? parseInt(stored) + 1 : SEED + 1;
-    localStorage.setItem("at23_v", n.toString()); setV(n.toLocaleString());
+    /* POST increments the real counter in Vercel KV.
+       Falls back to localStorage if KV is not set up yet. */
+    fetch("/api/visitors", { method: "POST" })
+      .then(r => r.json())
+      .then(d => { if (d.count > 0) setV(Number(d.count).toLocaleString()); })
+      .catch(() => {
+        const n = parseInt(localStorage.getItem("at23_v") || "1247") + 1;
+        localStorage.setItem("at23_v", n.toString());
+        setV(n.toLocaleString());
+      });
   }, []);
   return v;
 }
@@ -247,8 +277,8 @@ function StoryPopup({ isOpen, onClose }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          maxWidth: 720, width: "100%",
-          maxHeight: "82vh",
+          maxWidth: "min(720px, 95vw)", width: "100%",
+          maxHeight: "88vh",
           background: "rgba(10,10,15,0.86)",
           backdropFilter: "blur(28px) saturate(140%)",
           WebkitBackdropFilter: "blur(28px) saturate(140%)",
@@ -475,12 +505,12 @@ function Hero({ onStory, storyOpen }) {
     <section className="hero" id="hero">
       <AmbientPhoto />
       <FloatingSquares />
-      <div style={{ position:"absolute", top:40, left:48, right:48, display:"flex", justifyContent:"space-between", alignItems:"flex-start", zIndex:3 }}>
+      <div className="hero-bar" style={{ position:"absolute", top:40, left:48, right:48, display:"flex", justifyContent:"space-between", alignItems:"flex-start", zIndex:3 }}>
         <div>
           <div style={{ fontFamily:"'Array',monospace", fontSize:"2.4rem", letterSpacing:".12em", textTransform:"uppercase", color:"#0A0A0B", lineHeight:1 }}>AT23</div>
           {views && <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".5rem", letterSpacing:".2em", textTransform:"uppercase", color:"#555", marginTop:7 }}>{views} visitors</div>}
         </div>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:12 }}>
+        <div className="hero-bar-right" style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:12 }}>
           <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".54rem", letterSpacing:".14em", color:"#555", textAlign:"right", lineHeight:1.7 }}>LOCAL TIME<br />{time} IST</div>
           <button className={`sb${storyOpen ? " on" : ""}`} onClick={onStory} data-cursor="Story">
             Journey
@@ -495,7 +525,7 @@ function Hero({ onStory, storyOpen }) {
       </div>
 
       {/* India location box — bottom-left */}
-      <div style={{ position: "absolute", bottom: 40, left: 32, zIndex: 3 }}>
+      <div className="loc-wrap" style={{ position: "absolute", bottom: 40, left: 32, zIndex: 3 }}>
         <LocationBox />
       </div>
     </section>
