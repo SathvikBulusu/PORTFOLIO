@@ -10,7 +10,6 @@ import Work      from "./components/Work";
 import Writing   from "./components/Writing";
 import Projects  from "./components/Projects";
 import Frames     from "./components/Frames";
-import InfluencesDiamond from "./components/InfluencesDiamond";
 import LocationBox       from "./components/LocationBox";
 import Footer    from "./components/Footer";
 
@@ -216,10 +215,13 @@ const WORK_ITEMS = [
 
 /* ── Skills data ── */
 const SKILLS_GROUPS = [
-  { group: "AI / ML",     items: ["Gemini", "Claude", "Multi-Provider LLM", "Prompt Engineering", "JSON Schema", "Few-Shot", "RAG"] },
-  { group: "Data",        items: ["Python", "SQL", "Pandas", "NumPy", "BigQuery", "Metabase"] },
-  { group: "Engineering", items: ["React", "Vite", "GSAP", "Three.js", "Node", "Streamlit"] },
-  { group: "Tools",       items: ["Confluence", "Cloud Anix", "Google Drive API", "OBS"] },
+  { group: "LLMs & Providers",  items: ["Gemini", "Claude", "OpenAI", "Ollama", "Groq"] },
+  { group: "AI Engineering",    items: ["Prompt Engineering", "JSON Schema", "Few-Shot", "RAG", "Multi-Provider Inference", "Voice Agents", "Server-Side Batching"] },
+  { group: "Data Science",      items: ["Python", "Pandas", "NumPy", "Scikit-learn", "SQL", "EDA", "Statistics"] },
+  { group: "Analytics & BI",    items: ["Metabase", "BigQuery", "Streamlit", "Cohort Analysis"] },
+  { group: "Frontend",          items: ["React", "Vite", "GSAP", "Three.js", "React Three Fiber", "Tailwind"] },
+  { group: "Backend & Infra",   items: ["Node.js", "Express", "Postgres", "REST APIs"] },
+  { group: "Tools & Workflow",  items: ["Cloud Anix", "Google Drive API", "Confluence", "Notion", "Git", "OBS"] },
 ];
 
 /* ── Journey popup — 3 tabs, glassmorphic card ── */
@@ -401,25 +403,26 @@ function StoryPopup({ isOpen, onClose }) {
           )}
 
           {tab === "skills" && (
-            <div style={{ display: "grid", gap: 22 }}>
+            <div style={{ display: "grid", gap: 28 }}>
               {SKILLS_GROUPS.map(g => (
                 <div key={g.group}>
                   <div style={{
-                    fontFamily: "'Space Mono',monospace", fontSize: ".55rem",
-                    letterSpacing: ".22em", textTransform: "uppercase",
-                    color: "rgba(255,255,255,0.5)", marginBottom: 10, fontWeight: 700,
+                    fontFamily: "'Space Mono',monospace", fontSize: ".72rem",
+                    letterSpacing: ".24em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.7)", marginBottom: 14, fontWeight: 700,
                   }}>
                     {g.group}
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {g.items.map(it => (
                       <span key={it} style={{
-                        fontFamily: "'Space Mono',monospace", fontSize: ".52rem",
-                        letterSpacing: ".12em", textTransform: "uppercase",
-                        color: "rgba(255,255,255,0.85)",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.14)",
-                        borderRadius: 6, padding: "5px 10px",
+                        fontFamily: "'Space Mono',monospace", fontSize: ".68rem",
+                        letterSpacing: ".1em", textTransform: "uppercase",
+                        color: "#F9F9F7", fontWeight: 700,
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        borderRadius: 8, padding: "9px 14px",
+                        whiteSpace: "nowrap",
                       }}>
                         {it}
                       </span>
@@ -491,13 +494,8 @@ function Hero({ onStory, storyOpen }) {
         </div>
       </div>
 
-      {/* Influences diamond — left side, mid-lower, above location box */}
-      <div style={{ position: "absolute", top: "55%", left: 60, transform: "translateY(-50%)", zIndex: 3 }}>
-        <InfluencesDiamond />
-      </div>
-
       {/* India location box — bottom-left */}
-      <div style={{ position: "absolute", bottom: 40, left: 48, zIndex: 3 }}>
+      <div style={{ position: "absolute", bottom: 40, left: 32, zIndex: 3 }}>
         <LocationBox />
       </div>
     </section>
