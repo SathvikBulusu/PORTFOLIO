@@ -85,7 +85,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opa
 .cpill{position:fixed;top:0;left:0;pointer-events:none;z-index:9998;background:#0A0A0B;color:#F9F9F7;padding:5px 13px;border-radius:100px;font-family:'Space Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .15s;}
 
 /* ── Story popup ── */
-.story-pop{position:fixed;inset:0;background:rgba(249,249,247,0.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);z-index:880;display:flex;align-items:center;justify-content:center;transition:opacity .35s,visibility .35s;padding:72px 10vw;overflow-y:auto;}
+.story-pop{position:fixed;inset:0;background:rgba(6,6,10,0.6);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:880;display:flex;align-items:center;justify-content:center;transition:opacity .35s,visibility .35s;padding:5vh 5vw;overflow:hidden;}
 .story-pop.closed{opacity:0;visibility:hidden;pointer-events:none;}
 .story-pop.open{opacity:1;visibility:visible;}
 
@@ -209,84 +209,227 @@ function ParticleSathvik() {
   return <canvas ref={cRef} style={{ display:"block", width:"88vw", height:"clamp(100px,16vh,180px)", position:"relative", zIndex:2 }} />;
 }
 
-/* ── StoryPopup — "Journey" with Work Experience shortcut tab ── */
+/* ── Work experience data ── */
+const WORK_ITEMS = [
+  { company: "Moneyview", role: "Applied AI Intern · Consumer Insights", period: "Feb 2025 — Jun 2025" },
+];
+
+/* ── Skills data ── */
+const SKILLS_GROUPS = [
+  { group: "AI / ML",     items: ["Gemini", "Claude", "Multi-Provider LLM", "Prompt Engineering", "JSON Schema", "Few-Shot", "RAG"] },
+  { group: "Data",        items: ["Python", "SQL", "Pandas", "NumPy", "BigQuery", "Metabase"] },
+  { group: "Engineering", items: ["React", "Vite", "GSAP", "Three.js", "Node", "Streamlit"] },
+  { group: "Tools",       items: ["Confluence", "Cloud Anix", "Google Drive API", "OBS"] },
+];
+
+/* ── Journey popup — 3 tabs, glassmorphic card ── */
 function StoryPopup({ isOpen, onClose }) {
-  const goToWork = () => {
-    onClose();
-    setTimeout(() => {
-      const el = document.getElementById("work");
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }, 350);
-  };
+  const [tab, setTab] = useState("journey");   /* work | journey | skills */
+
+  /* Reset to Journey each open */
+  useEffect(() => { if (isOpen) setTab("journey"); }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   return (
-    <div className={`story-pop ${isOpen ? "open" : "closed"}`} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <button
-        onClick={onClose}
+    <div
+      className={`story-pop ${isOpen ? "open" : "closed"}`}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      {/* ── The card itself — glassmorphic dark panel ── */}
+      <div
+        onClick={e => e.stopPropagation()}
         style={{
-          position:"fixed", top:28, right:36,
-          fontFamily:"'Array',monospace", fontSize:"1.3rem", letterSpacing:".06em",
-          textTransform:"uppercase", color:"#0A0A0B", background:"none", border:"none",
-          cursor:"pointer", zIndex:890, lineHeight:1,
+          maxWidth: 720, width: "100%",
+          maxHeight: "82vh",
+          background: "rgba(10,10,15,0.86)",
+          backdropFilter: "blur(28px) saturate(140%)",
+          WebkitBackdropFilter: "blur(28px) saturate(140%)",
+          borderRadius: 22,
+          border: "1px solid rgba(255,255,255,0.12)",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset",
+          padding: "28px 32px",
+          overflowY: "auto",
+          position: "relative",
         }}
       >
-        ✕
-      </button>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          style={{
+            position: "absolute", top: 20, right: 22,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            borderRadius: 100, width: 34, height: 34,
+            cursor: "pointer",
+            color: "rgba(255,255,255,0.8)",
+            fontFamily: "'Array',monospace", fontSize: "1rem",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            lineHeight: 1,
+          }}
+        >
+          ✕
+        </button>
 
-      <div style={{ maxWidth:600, width:"100%", position:"relative" }}>
-
-        {/* ── Two tabs at top ── */}
-        <div style={{ display:"flex", gap:8, marginBottom:44 }}>
-          <button
-            onClick={goToWork}
-            style={{
-              fontFamily:"'Space Mono',monospace", fontSize:".58rem", letterSpacing:".2em",
-              textTransform:"uppercase", color:"#666", fontWeight:700,
-              background:"transparent", border:"1px solid #ECEAE4", borderRadius:100,
-              padding:"8px 18px", cursor:"pointer",
-              transition:"all .2s",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = "#0A0A0B";
-              e.currentTarget.style.color = "#F9F9F7";
-              e.currentTarget.style.borderColor = "#0A0A0B";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#666";
-              e.currentTarget.style.borderColor = "#ECEAE4";
-            }}
-          >
-            Work Experience
-          </button>
-          <button
-            disabled
-            style={{
-              fontFamily:"'Space Mono',monospace", fontSize:".58rem", letterSpacing:".2em",
-              textTransform:"uppercase", color:"#F9F9F7", fontWeight:700,
-              background:"#0A0A0B", border:"1px solid #0A0A0B", borderRadius:100,
-              padding:"8px 18px", cursor:"default",
-            }}
-          >
-            My Journey So Far
-          </button>
+        {/* ── Tabs row ── */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 28, marginTop: 4 }}>
+          {[
+            { key: "work",    label: "Work Experience" },
+            { key: "journey", label: "Journey" },
+            { key: "skills",  label: "Skills" },
+          ].map(t => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{
+                  fontFamily: "'Space Mono',monospace", fontSize: ".62rem",
+                  letterSpacing: ".18em", textTransform: "uppercase",
+                  color: active ? "#F9F9F7" : "rgba(255,255,255,0.55)",
+                  fontWeight: 700,
+                  background: active ? "rgba(147,51,234,0.85)" : "rgba(255,255,255,0.06)",
+                  border: `1px solid ${active ? "rgba(147,51,234,0.95)" : "rgba(255,255,255,0.12)"}`,
+                  borderRadius: 100,
+                  padding: "8px 16px",
+                  cursor: "pointer",
+                  transition: "all .18s",
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div style={{ position:"relative" }}>
-          <div style={{ position:"absolute", left:3, top:12, bottom:12, width:1, background:"#ECEAE4" }} />
-          {ARC_CARDS.map((c, i) => (
-            <div key={i} style={{ display:"flex", gap:28, paddingBottom:40, marginBottom:40, position:"relative", borderBottom:i<3?"1px solid #F0EDE8":"none" }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:i===3?"#0A0A0B":"#F9F9F7", border:"1px solid #0A0A0B", flexShrink:0, marginTop:10, position:"relative", zIndex:1 }} />
-              <div style={{ flex:1 }}>
-                <div style={{ fontFamily:"'Space Mono',monospace", fontSize:".5rem", color:"#bbb", letterSpacing:".14em", marginBottom:8 }}>{c.period} · {c.n}</div>
-                <div style={{ fontFamily:"'Array',monospace", fontSize:"clamp(1.4rem,3vw,2.4rem)", color:"#0A0A0B", letterSpacing:".04em", textTransform:"uppercase", lineHeight:1.0, marginBottom:14 }}>{c.era}</div>
-                <div style={{ fontFamily:"'Nippo',sans-serif", fontWeight:300, fontSize:".95rem", color:"#777", lineHeight:1.72, marginBottom:14 }}>{c.desc}</div>
-                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                  {c.tags.map(t => (<span key={t} style={{ fontFamily:"'Space Mono',monospace", fontSize:".44rem", letterSpacing:".1em", textTransform:"uppercase", color:"#0A0A0B", border:"1px solid #D8D4CC", padding:"2px 7px" }}>{t}</span>))}
+        {/* ── Tab content ── */}
+        <div style={{ minHeight: 300 }}>
+
+          {tab === "work" && (
+            <div>
+              {WORK_ITEMS.map((w, i) => (
+                <div key={i} style={{
+                  padding: "18px 0",
+                  borderBottom: i < WORK_ITEMS.length - 1 ? "1px dashed rgba(255,255,255,0.12)" : "none",
+                  display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap",
+                }}>
+                  <div>
+                    <div style={{
+                      fontFamily: "'Array',monospace", fontSize: "1.15rem",
+                      letterSpacing: ".03em", color: "#F9F9F7", fontWeight: 700, marginBottom: 4,
+                    }}>
+                      {w.company}
+                    </div>
+                    <div style={{
+                      fontFamily: "'Nippo',sans-serif", fontWeight: 300, fontSize: ".9rem",
+                      color: "rgba(255,255,255,0.55)",
+                    }}>
+                      {w.role}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontFamily: "'Space Mono',monospace", fontSize: ".62rem",
+                    letterSpacing: ".14em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.5)", fontWeight: 700, whiteSpace: "nowrap",
+                  }}>
+                    {w.period}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {tab === "journey" && (
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "absolute", left: 3, top: 8, bottom: 12, width: 1, background: "rgba(255,255,255,0.14)" }} />
+              {ARC_CARDS.map((c, i) => (
+                <div key={i} style={{
+                  display: "flex", gap: 24, paddingBottom: 24, marginBottom: 24, position: "relative",
+                  borderBottom: i < ARC_CARDS.length - 1 ? "1px dashed rgba(255,255,255,0.10)" : "none",
+                }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: i === ARC_CARDS.length - 1 ? "#9333EA" : "rgba(255,255,255,0.6)",
+                    border: "1px solid rgba(255,255,255,0.7)",
+                    flexShrink: 0, marginTop: 8, position: "relative", zIndex: 1,
+                    boxShadow: i === ARC_CARDS.length - 1 ? "0 0 8px #9333EA" : "none",
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontFamily: "'Space Mono',monospace", fontSize: ".5rem",
+                      color: "rgba(255,255,255,0.45)", letterSpacing: ".14em", marginBottom: 6,
+                    }}>
+                      {c.period} · {c.n}
+                    </div>
+                    <div style={{
+                      fontFamily: "'Array',monospace", fontSize: "clamp(1.2rem,2.4vw,1.8rem)",
+                      color: "#F9F9F7", letterSpacing: ".04em", textTransform: "uppercase",
+                      lineHeight: 1.05, marginBottom: 10,
+                    }}>
+                      {c.era}
+                    </div>
+                    <div style={{
+                      fontFamily: "'Nippo',sans-serif", fontWeight: 300, fontSize: ".9rem",
+                      color: "rgba(255,255,255,0.65)", lineHeight: 1.7, marginBottom: 10,
+                    }}>
+                      {c.desc}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {c.tags.map(t => (
+                        <span key={t} style={{
+                          fontFamily: "'Space Mono',monospace", fontSize: ".46rem",
+                          letterSpacing: ".1em", textTransform: "uppercase",
+                          color: "rgba(255,255,255,0.75)",
+                          border: "1px solid rgba(255,255,255,0.2)", padding: "2px 8px",
+                        }}>
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "skills" && (
+            <div style={{ display: "grid", gap: 22 }}>
+              {SKILLS_GROUPS.map(g => (
+                <div key={g.group}>
+                  <div style={{
+                    fontFamily: "'Space Mono',monospace", fontSize: ".55rem",
+                    letterSpacing: ".22em", textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.5)", marginBottom: 10, fontWeight: 700,
+                  }}>
+                    {g.group}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {g.items.map(it => (
+                      <span key={it} style={{
+                        fontFamily: "'Space Mono',monospace", fontSize: ".52rem",
+                        letterSpacing: ".12em", textTransform: "uppercase",
+                        color: "rgba(255,255,255,0.85)",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        borderRadius: 6, padding: "5px 10px",
+                      }}>
+                        {it}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
       </div>
     </div>

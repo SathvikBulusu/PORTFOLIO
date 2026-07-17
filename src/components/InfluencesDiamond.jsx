@@ -1,10 +1,9 @@
-/* src/components/InfluencesDiamond.jsx */
+/* src/components/InfluencesDiamond.jsx
+   Simple, bulletproof — no gsap, no closedRef races, plain React.
+*/
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import * as THREE from "three";
-import gsap from "gsap";
-import { getLenis } from "./LenisProvider";
 
 const ARRAY = "'Array', monospace";
 const MONO  = "'Space Mono', monospace";
@@ -13,152 +12,130 @@ const NIPPO = "'Nippo', sans-serif";
 const QUOTES = [
   {
     show: "Sons of Anarchy",
-    quote: "It's hard not to hate. People, things, institutions. When they break your spirit and take pleasure in watching you bleed, hate is the only feeling that makes sense. But I know what hate does to a man. Tears him apart. Turns him into something he's not. Something he promised himself he'd never become.",
+    quote: "It's hard not to hate. People, things, institutions. When they break your spirit and take pleasure in watching you bleed, hate is the only feeling that makes sense.",
     attr: "— Jax Teller",
   },
-  { show: "Billions", quote: "Starvation makes the brain run faster.", attr: "" },
-  { show: "Add a quote", quote: "Something that moved you.", attr: "" },
-  { show: "Add a quote", quote: "A line you carry with you.", attr: "" },
-  { show: "Add a quote", quote: "Words that changed how you see things.", attr: "" },
+  { show: "Billions",     quote: "Starvation makes the brain run faster.", attr: "" },
+  { show: "Add a quote",  quote: "Something that moved you.", attr: "" },
+  { show: "Add a quote",  quote: "A line you carry with you.", attr: "" },
+  { show: "Add a quote",  quote: "Words that changed how you see things.", attr: "" },
 ];
 
-/* ── Colors — matches site aesthetic: black + charcoal, no color ── */
-const GEM_COLOR = "#0A0A0B";
-
-/* ── One clean bipyramid, single group rotation ──
-   The trick to "every facet visible" is:
-   1. Low-poly cones (only 4–5 sides) so facets are BIG, not smooth
-   2. Rotate on Y axis so the vertical-belt facets sweep past camera
-   3. Slight tilt on Z so tips angle toward viewer, revealing top/bottom faces
-   4. Multiple lights from opposing angles so light-dark transitions happen
-      as each facet turns through them
-*/
 function Gem() {
-  const groupRef = useRef();
-
-  const geo = useMemo(() => {
-    /* 5-sided bipyramid — belt has 5 wide facets. Odd number so no two
-       facets face camera at the same time — always dynamic profile. */
-    const top = new THREE.ConeGeometry(0.62, 1.15, 5);
-    top.translate(0, 0.575, 0);
-    const bot = new THREE.ConeGeometry(0.62, 1.15, 5);
-    bot.rotateZ(Math.PI);
-    bot.translate(0, -0.575, 0);
-    return { top, bot };
-  }, []);
-
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color:     new THREE.Color(GEM_COLOR),
-    metalness: 0.75,
-    roughness: 0.30,
-    flatShading: true,     /* CRITICAL — makes each facet a solid tone */
-  }), []);
-
-  /* Wireframe edge overlay — subtle white lines along facet borders.
-     Ensures every edge is visible even in dim spots during rotation. */
-  const edgeGeo = useMemo(() => {
-    const merged = new THREE.BufferGeometry();
-    return {
-      top: new THREE.EdgesGeometry(geo.top),
-      bot: new THREE.EdgesGeometry(geo.bot),
-    };
-  }, [geo]);
-
-  const edgeMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: "#333333", transparent: true, opacity: 0.55,
-  }), []);
-
-  useFrame((_, delta) => {
-    if (!groupRef.current) return;
-    /* Clockwise from front view = negative Y rotation.
-       Steady speed — no oscillation, no acceleration. */
-    groupRef.current.rotation.y -= delta * 0.55;
+  const g = useRef();
+  useFrame((_, dt) => {
+    if (g.current) g.current.rotation.y -= dt * 0.55;
   });
-
   return (
-    /* Tilted forward slightly so both top & bottom halves visible */
-    <group ref={groupRef} rotation={[0.15, 0, 0]}>
-      <mesh geometry={geo.top} material={mat} />
-      <mesh geometry={geo.bot} material={mat} />
-      <lineSegments geometry={edgeGeo.top} material={edgeMat} />
-      <lineSegments geometry={edgeGeo.bot} material={edgeMat} />
+    <group ref={g} rotation={[0.15, 0, 0]}>
+      <mesh position={[0, 0.575, 0]}>
+        <coneGeometry args={[0.62, 1.15, 5]} />
+        <meshStandardMaterial color="#0A0A0B" metalness={0.75} roughness={0.30} flatShading />
+      </mesh>
+      <mesh position={[0, -0.575, 0]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.62, 1.15, 5]} />
+        <meshStandardMaterial color="#0A0A0B" metalness={0.75} roughness={0.30} flatShading />
+      </mesh>
     </group>
   );
 }
 
-function GemCanvas() {
-  return (
-    <Canvas
-      camera={{ position: [0, 0, 3.2], fov: 45 }}
-      style={{ width: 100, height: 130, display: "block" }}
-      gl={{ alpha: true, antialias: true }}
-    >
-      {/* Monochrome lighting — white key + soft warm-white fill, no color casts */}
-      <ambientLight intensity={0.6} />
-      <pointLight position={[3, 2.5, 3]}   intensity={7}   color="#ffffff" />
-      <pointLight position={[-3, -1, 2.5]} intensity={3}   color="#f0efe8" />
-      <pointLight position={[0, 3, -2]}    intensity={2}   color="#ffffff" />
-      <Gem />
-    </Canvas>
-  );
-}
-
-/* ── Fullscreen quotes overlay ── */
+/* Absolute-positioned quotes — mapped over a fullscreen dark overlay */
 const POSITIONS = [
-  { left: "8%",  top: "14%" },
-  { left: "52%", top: "10%" },
-  { left: "14%", top: "48%" },
-  { left: "56%", top: "52%" },
+  { left: "8%",  top: "16%" },
+  { left: "56%", top: "12%" },
+  { left: "12%", top: "48%" },
+  { left: "58%", top: "52%" },
   { left: "10%", top: "78%" },
 ];
 
-function QuotesOverlay({ onClose }) {
-  const ref = useRef();
-
+function Overlay({ onClose }) {
+  /* Body lock, restore on unmount */
   useEffect(() => {
-    getLenis()?.stop();
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    gsap.fromTo(ref.current, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" });
-    return () => { document.body.style.overflow = ""; getLenis()?.start(); };
-  }, []);
-
-  const close = () =>
-    gsap.to(ref.current, { opacity: 0, duration: 0.3, ease: "power2.in", onComplete: onClose });
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
 
   return (
-    <div ref={ref} style={{
-      position: "fixed", inset: 0, zIndex: 995,
-      background: "#020204", overflow: "hidden",
-    }}>
-      <button onClick={close} style={{
-        position: "fixed", top: 28, right: 40, zIndex: 2,
-        background: "none", border: "none", cursor: "pointer",
-        fontFamily: ARRAY, fontSize: "1.4rem", color: "rgba(255,255,255,0.6)",
-      }}>✕</button>
+    <div
+      onClick={onClose}          /* click anywhere on backdrop closes */
+      style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "#020204",
+        overflow: "hidden",
+        animation: "infFade 0.35s ease-out",
+      }}
+    >
+      <style>{`@keyframes infFade { from { opacity: 0 } to { opacity: 1 } }`}</style>
+
+      {/* Close button — event stops propagation so backdrop doesn't
+         re-trigger. Very explicit hit area. */}
+      <button
+        type="button"
+        onClick={e => { e.stopPropagation(); onClose(); }}
+        aria-label="Close"
+        style={{
+          position: "fixed", top: 24, right: 32, zIndex: 10001,
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          borderRadius: 100,
+          width: 44, height: 44,
+          cursor: "pointer",
+          color: "#F9F9F7",
+          fontSize: "1.15rem",
+          fontFamily: ARRAY,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          lineHeight: 1,
+        }}
+      >
+        ✕
+      </button>
 
       <div style={{
-        position: "absolute", top: 36, left: 44, zIndex: 2,
+        position: "fixed", top: 32, left: 40, zIndex: 10000,
         fontFamily: MONO, fontSize: ".56rem", letterSpacing: ".26em",
-        textTransform: "uppercase", color: "rgba(255,255,255,0.4)", fontWeight: 700,
+        textTransform: "uppercase", color: "rgba(255,255,255,0.4)",
+        fontWeight: 700, pointerEvents: "none",
       }}>
         Influences
       </div>
 
       {QUOTES.map((item, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          left: POSITIONS[i % POSITIONS.length].left,
-          top:  POSITIONS[i % POSITIONS.length].top,
-          maxWidth: 460, zIndex: 1,
-        }}>
-          <div style={{ fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".22em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 12, fontWeight: 700 }}>
+        <div
+          key={i}
+          onClick={e => e.stopPropagation()}   /* clicking quote doesn't close */
+          style={{
+            position: "absolute",
+            left: POSITIONS[i % POSITIONS.length].left,
+            top:  POSITIONS[i % POSITIONS.length].top,
+            maxWidth: 460, zIndex: 5,
+          }}
+        >
+          <div style={{
+            fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".22em",
+            textTransform: "uppercase", color: "rgba(255,255,255,0.42)",
+            marginBottom: 12, fontWeight: 700,
+          }}>
             {item.show}
           </div>
-          <div style={{ fontFamily: NIPPO, fontWeight: 300, fontSize: "clamp(.92rem,1.35vw,1.05rem)", color: "rgba(255,255,255,0.78)", lineHeight: 1.85 }}>
+          <div style={{
+            fontFamily: NIPPO, fontWeight: 300,
+            fontSize: "clamp(.92rem,1.35vw,1.05rem)",
+            color: "rgba(255,255,255,0.8)", lineHeight: 1.85,
+          }}>
             "{item.quote}"
           </div>
           {item.attr && (
-            <div style={{ fontFamily: MONO, fontSize: ".46rem", letterSpacing: ".16em", color: "rgba(255,255,255,0.35)", marginTop: 12 }}>
+            <div style={{
+              fontFamily: MONO, fontSize: ".46rem", letterSpacing: ".16em",
+              color: "rgba(255,255,255,0.4)", marginTop: 12,
+            }}>
               {item.attr}
             </div>
           )}
@@ -173,10 +150,12 @@ export default function InfluencesDiamond() {
 
   return (
     <>
-      <div
+      <button
+        type="button"
         onClick={() => setOpen(true)}
         data-cursor="Influences"
         style={{
+          background: "none", border: "none", padding: 0, margin: 0,
           cursor: "pointer",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
           transition: "transform .3s ease",
@@ -184,16 +163,27 @@ export default function InfluencesDiamond() {
         onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}
       >
-        <GemCanvas />
+        <Canvas
+          camera={{ position: [0, 0, 3.2], fov: 45 }}
+          style={{ width: 100, height: 130, display: "block", pointerEvents: "none" }}
+          gl={{ alpha: true, antialias: true }}
+          dpr={[1, 2]}
+        >
+          <ambientLight intensity={0.6} />
+          <pointLight position={[3, 2.5, 3]}   intensity={7} color="#ffffff" />
+          <pointLight position={[-3, -1, 2.5]} intensity={3} color="#f0efe8" />
+          <pointLight position={[0, 3, -2]}    intensity={2} color="#ffffff" />
+          <Gem />
+        </Canvas>
         <span style={{
           fontFamily: MONO, fontSize: ".5rem", letterSpacing: ".24em",
           textTransform: "uppercase", color: "#666", fontWeight: 700,
         }}>
           Influences
         </span>
-      </div>
+      </button>
 
-      {open && <QuotesOverlay onClose={() => setOpen(false)} />}
+      {open && <Overlay onClose={() => setOpen(false)} />}
     </>
   );
 }

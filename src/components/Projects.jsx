@@ -50,9 +50,11 @@ export default function Projects() {
       {/* Subtle outer container outline */}
       <div style={{
         maxWidth: 1400, margin: "0 auto",
-        border: "1px solid #ECEAE4", borderRadius: 12,
+        border: "1px solid rgba(10,10,11,0.15)",
+        borderRadius: 14,
         padding: "72px 60px 80px",
-        background: "#F9F9F7",
+        background: "linear-gradient(180deg, #FBFAF7 0%, #F5F3EE 100%)",
+        boxShadow: "0 24px 60px rgba(10,10,11,0.08), 0 8px 20px rgba(10,10,11,0.04), inset 0 1px 0 rgba(255,255,255,0.8)",
         display: "flex", flexDirection: "column", alignItems: "center",
       }}>
         <div ref={headingRef} style={{ marginBottom: 64, textAlign: "center" }}>
@@ -69,13 +71,14 @@ export default function Projects() {
           ref={cardRef}
           data-cursor="In Progress"
           style={{
-            border: "1px solid #0A0A0B",
+            border: "1.5px solid #0A0A0B",
             padding: "36px 32px",
             width: "100%", maxWidth: 420,
             marginBottom: 32,
             cursor: "pointer",
-            background: "#F9F9F7",
-            boxShadow: "0 12px 32px rgba(10,10,11,0.10), 0 4px 12px rgba(10,10,11,0.06)",
+            background: "linear-gradient(180deg, #FFFFFF 0%, #F5F3EE 100%)",
+            borderRadius: 6,
+            boxShadow: "0 18px 40px rgba(10,10,11,0.16), 0 6px 14px rgba(10,10,11,0.10), inset 0 1px 0 rgba(255,255,255,0.9)",
             transition: "background .2s, transform .2s, box-shadow .2s",
             opacity: 0,
             textAlign: "center",
