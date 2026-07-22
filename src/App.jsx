@@ -240,18 +240,55 @@ function ParticleSathvik() {
 
 /* ── Work experience data ── */
 const WORK_ITEMS = [
-  { company: "Moneyview", role: "Applied AI Intern · Consumer Insights", period: "Feb 2025 — Jun 2025" },
+  { company: "Moneyview", role: "Applied AI Intern · Consumer Insights", period: "Sep 2025 — Jun 2026" },
 ];
 
 /* ── Skills data ── */
 const SKILLS_GROUPS = [
-  { group: "LLMs & Providers",  items: ["Gemini", "Claude", "OpenAI", "Ollama", "Groq"] },
-  { group: "AI Engineering",    items: ["Prompt Engineering", "JSON Schema", "Few-Shot", "RAG", "Multi-Provider Inference", "Voice Agents", "Server-Side Batching"] },
-  { group: "Data Science",      items: ["Python", "Pandas", "NumPy", "Scikit-learn", "SQL", "EDA", "Statistics"] },
-  { group: "Analytics & BI",    items: ["Metabase", "BigQuery", "Streamlit", "Cohort Analysis"] },
-  { group: "Frontend",          items: ["React", "Vite", "GSAP", "Three.js", "React Three Fiber", "Tailwind"] },
-  { group: "Backend & Infra",   items: ["Node.js", "Express", "Postgres", "REST APIs"] },
-  { group: "Tools & Workflow",  items: ["Cloud Anix", "Google Drive API", "Confluence", "Notion", "Git", "OBS"] },
+  {
+    group: "LLMs & Providers",
+    items: ["Gemini", "Claude", "OpenAI", "Ollama"]
+  },
+  {
+    group: "AI Engineering",
+    items: [
+      "Prompt Engineering",
+      "Few-Shot Prompting",
+      "Structured Outputs (JSON Schema)",
+      "Model Routing",
+      "Multi-Provider LLM Inference",
+      "Asynchronous Batch Processing"
+    ]
+  },
+  {
+    group: "Data Science",
+    items: [
+      "Python",
+      "SQL",
+      "Pandas",
+      "NumPy",
+      "Scikit-learn",
+      "EDA",
+      "Machine-Learning",
+      "Statistics"
+    ]
+  },
+  {
+    group: "Analytics & BI",
+    items: ["BigQuery", "Metabase", "Streamlit"]
+  },
+  {
+    group: "Frontend",
+    items: ["React", "Next.js", "Tailwind CSS", "Vite"]
+  },
+  {
+    group: "Backend & Infra",
+    items: ["Next.js API Routes", "Node.js", "PostgreSQL", "REST APIs"]
+  },
+  {
+    group: "Tools",
+    items: ["Git", "GitHub", "Confluence", "Notion"]
+  }
 ];
 
 /* ── Journey popup — 3 tabs, glassmorphic card ── */
